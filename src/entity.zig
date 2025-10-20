@@ -189,8 +189,7 @@ pub const ClientEntityManager = struct {
 		c.glUniform1f(uniforms.contrast, 0.12);
 
 		for(entities.items()) |ent| {
-			if(ent.id == game.Player.id) continue; // don't render local player
-
+			// if(ent.id == game.Player.id) continue; // don't render local player
 			const blockPos: vec.Vec3i = @intFromFloat(@floor(ent.pos));
 			const lightVals: [6]u8 = main.renderer.mesh_storage.getLight(blockPos[0], blockPos[1], blockPos[2]) orelse @splat(0);
 			const light = (@as(u32, lightVals[0] >> 3) << 25 |
@@ -201,7 +200,7 @@ pub const ClientEntityManager = struct {
 				@as(u32, lightVals[5] >> 3) << 0);
 
 			c.glUniform1ui(uniforms.light, @bitCast(@as(u32, light)));
-
+                        
 			const pos: Vec3d = ent.getRenderPosition() - playerPos;
 			const modelMatrix = (Mat4f.identity()
 				.mul(Mat4f.translation(Vec3f{
@@ -211,8 +210,10 @@ pub const ClientEntityManager = struct {
 				}))
 				.mul(Mat4f.rotationZ(-ent.rot[2])));
 			const modelViewMatrix = game.camera.viewMatrix.mul(modelMatrix);
-			c.glUniformMatrix4fv(uniforms.viewMatrix, 1, c.GL_TRUE, @ptrCast(&modelViewMatrix));
-			c.glDrawElements(c.GL_TRIANGLES, 6*modelSize, c.GL_UNSIGNED_INT, null);
+                        _ = modelViewMatrix;
+                        graphics.draw.line(.{0,0}, .{100,100});
+			// c.glUniformMatrix4fv(uniforms.viewMatrix, 1, c.GL_TRUE, @ptrCast(&modelViewMatrix));
+			// c.glDrawElements(c.GL_TRIANGLES, 6*modelSize, c.GL_UNSIGNED_INT, null);
 		}
 	}
 

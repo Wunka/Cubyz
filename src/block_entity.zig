@@ -485,6 +485,7 @@ pub const BlockEntityTypes = struct {
 			for(StorageClient.storage.dense.items) |*signData| {
 				if(signData.renderedTexture != null) continue;
 
+
 				c.glViewport(0, 0, textureWidth, textureHeight);
 				defer c.glViewport(0, 0, main.Window.width, main.Window.height);
 
@@ -501,10 +502,11 @@ pub const BlockEntityTypes = struct {
 				const oldClip = graphics.draw.setClip(.{textureWidth - 2*textureMargin, textureHeight - 2*textureMargin});
 				defer graphics.draw.restoreClip(oldClip);
 
-				var textBuffer = graphics.TextBuffer.init(main.stackAllocator, signData.text, .{.color = 0x000000}, false, .center); // TODO: Make the color configurable in the zon
-				defer textBuffer.deinit();
-				_ = textBuffer.calculateLineBreaks(16, textureWidth - 2*textureMargin);
-				textBuffer.renderTextWithoutShadow(0, 0, 16);
+				// var textBuffer = graphics.TextBuffer.init(main.stackAllocator, signData.text, .{.color = 0x000000}, false, .center); // TODO: Make the color configurable in the zon
+				// defer textBuffer.deinit();
+				// _ = textBuffer.calculateLineBreaks(16, textureWidth - 2*textureMargin);
+				// textBuffer.renderTextWithoutShadow(0, 0, 16);
+                                graphics.draw.line(.{0,0}, .{textureWidth,textureWidth});
 			}
 
 			c.glBindFramebuffer(c.GL_FRAMEBUFFER, @bitCast(oldFramebufferBinding));
