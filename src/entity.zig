@@ -162,7 +162,7 @@ pub const ClientEntityManager = struct {
 				@floatCast(pos3d[2] + 1.0),
 				1,
 			};
-
+                        //LOOK HERE
 			const rotatedPos = game.camera.viewMatrix.mulVec(pos4f);
 			const projectedPos = projMatrix.mulVec(rotatedPos);
 			if(projectedPos[2] < 0) continue;
@@ -175,6 +175,35 @@ pub const ClientEntityManager = struct {
 			const size = buf.calculateLineBreaks(32, 1024);
 			buf.render(xCenter - size[0]/2, yCenter - size[1], 32);
 		}
+
+                const pos4f = Vec4f{
+                    @floatCast(1.0),
+                    @floatCast(1.0),
+                    @floatCast(0),
+                    1,
+                };
+
+                const pos4f2 = Vec4f{
+                    @floatCast(playerPos[2] + 2.0),
+                    @floatCast(playerPos[2] + 2.0),
+                    @floatCast(playerPos[2]),
+                    1,
+                };
+                std.debug.print("jell\n",.{});
+                const rotatedPos = game.camera.viewMatrix.mulVec(pos4f);
+                const rotatedPos2 = game.camera.viewMatrix.mulVec(pos4f2);
+                const projectedPos = projMatrix.mulVec(rotatedPos);
+                const projectedPos2 = projMatrix.mulVec(rotatedPos2);
+                if(projectedPos[2] < 0 or projectedPos2[2] < 0) return;
+                
+                const xCenter = (1 + projectedPos[0]/projectedPos[3])*@as(f32, @floatFromInt(main.Window.width/2));
+                const yCenter = (1 - projectedPos[1]/projectedPos[3])*@as(f32, @floatFromInt(main.Window.height/2));
+                const xCenter2 = (1 + projectedPos2[0]/projectedPos2[3])*@as(f32, @floatFromInt(main.Window.width/2));
+                const yCenter2 = (1 - projectedPos2[1]/projectedPos2[3])*@as(f32, @floatFromInt(main.Window.height/2));
+
+                graphics.draw.line(.{xCenter,yCenter}, .{xCenter2,yCenter2});
+                
+
 	}
 
 	pub fn render(projMatrix: Mat4f, ambientLight: Vec3f, playerPos: Vec3d) void {
