@@ -17,6 +17,7 @@ const Label = @import("../components/Label.zig");
 const TextInput = @import("../components/TextInput.zig");
 const CheckBox = @import("../components/CheckBox.zig");
 const VerticalList = @import("../components/VerticalList.zig");
+const DropDownList = @import("../components/DropDownList.zig");
 
 pub var window = GuiWindow{
 	.contentSize = Vec2f{128, 256},
@@ -159,7 +160,12 @@ pub fn onOpen() void {
 	list.add(textInput);
 
 	gamemodeInput = Button.initText(.{0, 0}, 128, @tagName(gamemode), .{.callback = &gamemodeCallback});
+        const gamemodeDropDown = DropDownList.init(.{0,0},22,128);
+        inline for(@typeInfo(main.game.Gamemode).@"enum".decls) |mode| {
+            gamemodeDropDown.add(Label.init(.{0,0},128, @tagName(mode), .center));
+        }
 	list.add(gamemodeInput);
+        list.add(gamemodeDropDown);
 
 	list.add(CheckBox.init(.{0, 0}, 128, "Allow Cheats", true, &allowCheatsCallback));
 
