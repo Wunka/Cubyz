@@ -85,12 +85,14 @@ pub fn updateHovered(self: *DropDownList, mousePosition: Vec2f) void {
 }
 
 pub fn render(self: *DropDownList, mousePosition: Vec2f) void {
+    self.list.pos = self.pos;
+    self.list.size = self.size;
 	if(self.list.list.children.items.len > 0) {
 		if(self.open) {
 			self.list.render(mousePosition);
 		} else {
 			const item = self.list.list.children.items[self.selectedItemIdx];
-			const shiftedPos = Vec2f{0, -item.pos()[1]};
+			const shiftedPos = Vec2f{0, -item.pos()[1] + self.pos[1]};
 			const oldTranslation = draw.setTranslation(shiftedPos);
 			defer draw.restoreTranslation(oldTranslation);
 			item.render(mousePosition + shiftedPos);

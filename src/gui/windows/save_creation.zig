@@ -160,10 +160,12 @@ pub fn onOpen() void {
 	list.add(textInput);
 
 	gamemodeInput = Button.initText(.{0, 0}, 128, @tagName(gamemode), .{.callback = &gamemodeCallback});
-        const gamemodeDropDown = DropDownList.init(.{0,0},22,128);
-        inline for(@typeInfo(main.game.Gamemode).@"enum".decls) |mode| {
-            gamemodeDropDown.add(Label.init(.{0,0},128, @tagName(mode), .center));
+        const gamemodeDropDown = DropDownList.init(.{0,0},40,padding);
+        inline for(@typeInfo(main.game.Gamemode).@"enum".fields) |field| {
+            gamemodeDropDown.add(Label.init(.{0,0},128, field.name, .center));
         }
+        gamemodeDropDown.add(Label.init(.{0,0},128,"Hello???",.center));
+        gamemodeDropDown.finish(.center);
 	list.add(gamemodeInput);
         list.add(gamemodeDropDown);
 
