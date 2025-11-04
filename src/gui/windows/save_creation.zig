@@ -76,14 +76,13 @@ pub fn onOpen() void {
 	gamemodeInput = Button.initText(.{0, 0}, 128, @tagName(gamemode), .{.callback = &gamemodeCallback});
         const gamemodeDropDown = DropDownList.init(.{0,0},40,padding);
         inline for(@typeInfo(main.game.Gamemode).@"enum".fields) |field| {
-            gamemodeDropDown.add(Label.init(.{0,0},128, field.name, .center));
+            gamemodeDropDown.add(Label.init(.{0,0},127, field.name, .center));
         }
-        gamemodeDropDown.add(Label.init(.{0,0},128,"Hello???",.center));
         gamemodeDropDown.finish(.center);
 	list.add(gamemodeInput);
-        list.add(gamemodeDropDown);
 
 	list.add(CheckBox.init(.{0, 0}, 128, "Allow Cheats", true, &allowCheatsCallback));
+        list.add(gamemodeDropDown);
 
 	if(!build_options.isTaggedRelease) {
 		list.add(CheckBox.init(.{0, 0}, 128, "Testing mode (for developers)", false, &testingModeCallback));

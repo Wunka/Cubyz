@@ -149,7 +149,6 @@ pub fn render(self: *VerticalList, mousePosition: Vec2f) void {
 	for(self.children.items) |*child| {
 		const itemYPos = child.pos()[1];
 		const adjustedYPos = itemYPos + shiftedPos[1];
-
 		if(adjustedYPos + child.size()[1] < 0 or adjustedYPos - child.size()[1] > self.maxHeight + child.size()[1]) {
 			continue;
 		}

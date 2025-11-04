@@ -36,7 +36,7 @@ upPressed: bool = false,
 downPressed: bool = false,
 
 const normalColor: u32 = 0x00000000;
-const hoveredColor: u32 = 0x40ffffff;
+const hoveredColor: u32 = 0xfffff000;
 const selectedColor: u32 = 0x50000000;
 
 pub fn init(pos: Vec2f, maxHeight: f32, padding: f32, onSelect: Callback) *SelectableList {
@@ -172,7 +172,7 @@ pub fn render(self: *SelectableList, mousePosition: Vec2f) void {
 		defer draw.restoreClip(oldClip);
 		_ = draw.setTranslation(shiftedPos - self.list.pos);
 
-		if(self.selectedIdx) |idx| {
+		if(self.selectedIdx) |idx| { 
 			const child = self.list.children.items[idx];
 			draw.setColor(selectedColor);
 			draw.rect(child.pos(), child.size());
@@ -180,6 +180,8 @@ pub fn render(self: *SelectableList, mousePosition: Vec2f) void {
 		if(self.hoveredIdx) |idx| {
 			const child = self.list.children.items[idx];
 			draw.setColor(hoveredColor);
+                    std.debug.print("idx: {any}\n childPos: {any}\n childSize: {any}\n", .{idx,child.pos(),child.size()});
+
 			draw.rect(child.pos(), child.size());
 		}
 	}
