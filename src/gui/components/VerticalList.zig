@@ -10,6 +10,7 @@ const Vec2f = vec.Vec2f;
 const gui = @import("../gui.zig");
 const GuiComponent = gui.GuiComponent;
 const ScrollBar = GuiComponent.ScrollBar;
+const TextInput = GuiComponent.TextInput;
 
 const VerticalList = @This();
 
@@ -24,6 +25,7 @@ maxHeight: f32,
 childrenHeight: f32 = 0,
 scrollBar: *ScrollBar,
 scrollBarEnabled: bool = false,
+lastTextInput: ?*TextInput = null,
 
 pub fn init(pos: Vec2f, maxHeight: f32, padding: f32) *VerticalList {
 	const scrollBar = ScrollBar.init(undefined, scrollBarWidth, maxHeight - 2*border, 0);
@@ -59,6 +61,16 @@ pub fn add(self: *VerticalList, _other: anytype) void {
 	} else {
 		other = _other.toComponent();
 	}
+        switch(other) {
+            .textInput => |textinput| {
+                if(self.lastTextInput) |last|{
+                    last.optional.onNext = textinput.createGuiCallback();
+                    textinput.optional.onPrevious = last.createGuiCallback();
+                }
+                self.lastTextInput = textinput;
+            },
+            else => {},
+        }
 	other.mutPos().*[1] += self.size[1];
 	if(self.size[1] != 0) other.mutPos().*[1] += self.padding;
 	self.size[1] = other.pos()[1] + other.size()[1];
