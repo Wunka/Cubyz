@@ -180,8 +180,6 @@ pub fn render(self: *SelectableList, mousePosition: Vec2f) void {
 		if(self.hoveredIdx) |idx| {
 			const child = self.list.children.items[idx];
 			draw.setColor(hoveredColor);
-                    std.debug.print("idx: {any}\n childPos: {any}\n childSize: {any}\n", .{idx,child.pos(),child.size()});
-
 			draw.rect(child.pos(), child.size());
 		}
 	}
