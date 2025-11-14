@@ -158,11 +158,11 @@ pub fn select(self: *TextInput) void {
 }
 
 fn selectCallback(ptr: usize) void {
-    select(@ptrFromInt(ptr));
+	select(@ptrFromInt(ptr));
 }
 
 pub fn createGuiCallback(self: *TextInput) gui.Callback {
-    return .{.callback = &selectCallback, .arg = @intFromPtr(self)}; 
+	return .{.callback = &selectCallback, .arg = @intFromPtr(self)};
 }
 
 pub fn deselect(self: *TextInput) void {

@@ -61,16 +61,16 @@ pub fn add(self: *VerticalList, _other: anytype) void {
 	} else {
 		other = _other.toComponent();
 	}
-        switch(other) {
-            .textInput => |textinput| {
-                if(self.lastTextInput) |last|{
-                    last.optional.onNext = textinput.createGuiCallback();
-                    textinput.optional.onPrevious = last.createGuiCallback();
-                }
-                self.lastTextInput = textinput;
-            },
-            else => {},
-        }
+	switch(other) {
+		.textInput => |textinput| {
+			if(self.lastTextInput) |last| {
+				last.optional.onNext = textinput.createGuiCallback();
+				textinput.optional.onPrevious = last.createGuiCallback();
+			}
+			self.lastTextInput = textinput;
+		},
+		else => {},
+	}
 	other.mutPos().*[1] += self.size[1];
 	if(self.size[1] != 0) other.mutPos().*[1] += self.padding;
 	self.size[1] = other.pos()[1] + other.size()[1];
