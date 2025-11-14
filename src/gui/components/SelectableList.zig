@@ -36,7 +36,7 @@ upPressed: bool = false,
 downPressed: bool = false,
 
 const normalColor: u32 = 0x00000000;
-const hoveredColor: u32 = 0xfffff000;
+const hoveredColor: u32 = 0x40ffffff;
 const selectedColor: u32 = 0x50000000;
 
 pub fn init(pos: Vec2f, maxHeight: f32, padding: f32, onSelect: Callback) *SelectableList {
