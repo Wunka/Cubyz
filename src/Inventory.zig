@@ -2114,12 +2114,8 @@ pub fn distribute(carried: Inventory, destinationInventories: []const Inventory,
 	}
 }
 
-pub fn depositOrDropWithFallback(dest: Inventory, source: Inventory, fallback: Inventory) void {
+pub fn depositOrDrop(dest: Inventory, source: Inventory, fallback: ?Inventory) void {
 	Sync.ClientSide.executeCommand(.{.depositOrDrop = .{.dest = dest, .fallback = fallback, .source = source, .dropLocation = undefined}});
-}
-
-pub fn depositOrDrop(dest: Inventory, source: Inventory) void {
-	Sync.ClientSide.executeCommand(.{.depositOrDrop = .{.dest = dest, .source = source, .dropLocation = undefined}});
 }
 
 pub fn depositToAny(source: Inventory, sourceSlot: u32, dest: Inventory, amount: u16) void {
