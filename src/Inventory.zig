@@ -1636,14 +1636,18 @@ pub const Command = struct { // MARK: Command
 
 		fn serialize(self: DepositOrDrop, writer: *utils.BinaryWriter) void {
 			writer.writeEnum(InventoryId, self.dest.id);
+			writer.writeEnum(InventoryId, if(self.fallback) |fallback| fallback.id else self.dest.id);
 			writer.writeEnum(InventoryId, self.source.id);
 		}
 
 		fn deserialize(reader: *utils.BinaryReader, side: Side, user: ?*main.server.User) !DepositOrDrop {
 			const destId = try reader.readEnum(InventoryId);
+			var fallbackId: ?InventoryId = try reader.readEnum(InventoryId);
+			if(fallbackId == destId) fallbackId = null;
 			const sourceId = try reader.readEnum(InventoryId);
 			return .{
 				.dest = Sync.getInventory(destId, side, user) orelse return error.InventoryNotFound,
+				.fallback = if(fallbackId) |id| Sync.getInventory(id, side, user) else null,
 				.source = Sync.getInventory(sourceId, side, user) orelse return error.InventoryNotFound,
 				.dropLocation = (user orelse return error.Invalid).player.pos,
 			};

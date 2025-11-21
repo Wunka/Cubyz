@@ -687,17 +687,16 @@ pub const inventory = struct { // MARK: inventory
 		if(itemSlot.mode != .normal) return;
 
 		if(mainGuiButton.pressed and mainGuiButton.modsOnPress.shift) {
-			if(false) { // TODO: itemSlot.inventory.id == main.game.Player.inventory.id) {
+			if(itemSlot.inventory.id == main.game.Player.mainInventory.id or itemSlot.inventory.id == main.game.Player.hotbar.id) {
 				var iterator = std.mem.reverseIterator(openWindows.items);
 				while(iterator.next()) |window| {
 					if(window.shiftClickableInventory) |inv| {
-						_ = inv;
-						// TODO: itemSlot.inventory.depositToAny(itemSlot.itemSlot, inv, itemSlot.inventory.getAmount(itemSlot.itemSlot));
+						itemSlot.inventory.depositToAny(itemSlot.itemSlot, inv, null, itemSlot.inventory.getAmount(itemSlot.itemSlot));
 						break;
 					}
 				}
 			} else {
-				// TODO: itemSlot.inventory.depositToAny(itemSlot.itemSlot, main.game.Player.inventory, itemSlot.inventory.getAmount(itemSlot.itemSlot));
+				itemSlot.inventory.depositToAny(itemSlot.itemSlot, main.game.Player.hotbar, main.game.Player.mainInventory, itemSlot.inventory.getAmount(itemSlot.itemSlot));
 			}
 			return;
 		}
