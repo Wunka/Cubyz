@@ -2118,8 +2118,8 @@ pub fn depositOrDrop(dest: Inventory, source: Inventory, fallback: ?Inventory) v
 	Sync.ClientSide.executeCommand(.{.depositOrDrop = .{.dest = dest, .fallback = fallback, .source = source, .dropLocation = undefined}});
 }
 
-pub fn depositToAny(source: Inventory, sourceSlot: u32, dest: Inventory, amount: u16) void {
-	Sync.ClientSide.executeCommand(.{.depositToAny = .{.dest = dest, .source = .{.inv = source, .slot = sourceSlot}, .amount = amount}});
+pub fn depositToAny(source: Inventory, sourceSlot: u32, dest: Inventory, fallback: ?Inventory, amount: u16) void {
+	Sync.ClientSide.executeCommand(.{.depositToAny = .{.dest = dest, .fallback = fallback, .source = .{.inv = source, .slot = sourceSlot}, .amount = amount}});
 }
 
 pub fn dropStack(source: Inventory, sourceSlot: u32) void {
