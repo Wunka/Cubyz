@@ -580,7 +580,7 @@ pub fn updateAndRenderGui() void {
 pub fn toggleGameMenu() void {
 	main.Window.setMouseGrabbed(!main.Window.grabbed);
 	if(main.Window.grabbed) { // Take of the currently held item stack and close some windows
-		main.game.Player.inventory.depositOrDrop(inventory.carried);
+		main.game.Player.hotbar.depositOrDropWithFallback(inventory.carried, main.game.Player.mainInventory);
 		hoveredItemSlot = null;
 		var i: usize = 0;
 		while(i < openWindows.items.len) {
