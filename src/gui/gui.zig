@@ -691,7 +691,7 @@ pub const inventory = struct { // MARK: inventory
 				var iterator = std.mem.reverseIterator(openWindows.items);
 				while(iterator.next()) |window| {
 					if(window.shiftClickableInventory) |inv| {
-                                            _ = inv;
+						_ = inv;
 						//TODO: itemSlot.inventory.depositToAny(itemSlot.itemSlot, inv, itemSlot.inventory.getAmount(itemSlot.itemSlot));
 						break;
 					}

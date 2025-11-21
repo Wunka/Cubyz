@@ -116,7 +116,7 @@ pub const User = struct { // MARK: User
 
 	inventoryClientToServerIdMap: std.AutoHashMap(InventoryId, InventoryId) = undefined,
 	mainInventory: ?InventoryId = null,
-        hotbar: ?InventoryId = null,
+	hotbar: ?InventoryId = null,
 	handInventory: ?InventoryId = null,
 
 	connected: Atomic(bool) = .init(true),

@@ -980,8 +980,8 @@ pub const ServerWorld = struct { // MARK: ServerWorld
 			if(main.items.Inventory.Sync.ServerSide.getInventoryFromSource(.{.playerMainInventory = user.id})) |inv| {
 				playerZon.put("playerMainInventory", ZonElement{.stringOwned = savePlayerInventory(main.stackAllocator, inv)});
 			} else @panic("The player main inventory wasn't found. Cannot save player data.");
-			
-                        if(main.items.Inventory.Sync.ServerSide.getInventoryFromSource(.{.playerHotbar = user.id})) |inv| {
+
+			if(main.items.Inventory.Sync.ServerSide.getInventoryFromSource(.{.playerHotbar = user.id})) |inv| {
 				playerZon.put("playerHotbar", ZonElement{.stringOwned = savePlayerInventory(main.stackAllocator, inv)});
 			} else @panic("The player hotbar wasn't found. Cannot save player data.");
 
