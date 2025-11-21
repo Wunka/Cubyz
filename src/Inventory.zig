@@ -1597,30 +1597,41 @@ pub const Command = struct { // MARK: Command
 			std.debug.assert(self.dest.type == .normal);
 			if(self.source.type == .creative) return;
 			if(self.source.type == .crafting) return;
+			if(self.fallback) |fallback| {
+				if(fallback.type != .normal) return;
+			}
 			var sourceItems = self.source._items;
 			if(self.source.type == .workbench) sourceItems = self.source._items[0..25];
 			outer: for(sourceItems, 0..) |*sourceStack, sourceSlot| {
 				if(sourceStack.item == null) continue;
-				for(self.dest._items, 0..) |*destStack, destSlot| {
-					if(std.meta.eql(destStack.item, sourceStack.item)) {
-						const amount = @min(destStack.item.?.stackSize() - destStack.amount, sourceStack.amount);
-						cmd.executeBaseOperation(allocator, .{.move = .{
-							.dest = .{.inv = self.dest, .slot = @intCast(destSlot)},
-							.source = .{.inv = self.source, .slot = @intCast(sourceSlot)},
-							.amount = amount,
-						}}, side);
-						if(sourceStack.amount == 0) {
-							continue :outer;
+				for([2]?Inventory{self.dest, self.fallback}) |_destInv| {
+					if(_destInv) |destInv| {
+						for(destInv._items, 0..) |*destStack, destSlot| {
+							if(std.meta.eql(destStack.item, sourceStack.item)) {
+								const amount = @min(destStack.item.?.stackSize() - destStack.amount, sourceStack.amount);
+								cmd.executeBaseOperation(allocator, .{.move = .{
+									.dest = .{.inv = destInv, .slot = @intCast(destSlot)},
+									.source = .{.inv = self.source, .slot = @intCast(sourceSlot)},
+									.amount = amount,
+								}}, side);
+								if(sourceStack.amount == 0) {
+									continue :outer;
+								}
+							}
 						}
 					}
 				}
-				for(self.dest._items, 0..) |*destStack, destSlot| {
-					if(destStack.item == null) {
-						cmd.executeBaseOperation(allocator, .{.swap = .{
-							.dest = .{.inv = self.dest, .slot = @intCast(destSlot)},
-							.source = .{.inv = self.source, .slot = @intCast(sourceSlot)},
-						}}, side);
-						continue :outer;
+				for([2]?Inventory{self.dest, self.fallback}) |_destInv| {
+					if(_destInv) |destInv| {
+						for(destInv._items, 0..) |*destStack, destSlot| {
+							if(destStack.item == null) {
+								cmd.executeBaseOperation(allocator, .{.swap = .{
+									.dest = .{.inv = destInv, .slot = @intCast(destSlot)},
+									.source = .{.inv = self.source, .slot = @intCast(sourceSlot)},
+								}}, side);
+								continue :outer;
+							}
+						}
 					}
 				}
 				if(side == .server) {
@@ -1664,6 +1675,9 @@ pub const Command = struct { // MARK: Command
 			if(self.dest.type == .creative) return;
 			if(self.dest.type == .crafting) return;
 			if(self.dest.type == .workbench) return;
+			if(self.fallback) |fallback| {
+				if(fallback.type != .normal) return;
+			}
 			if(self.source.inv.type == .crafting) {
 				cmd.tryCraftingTo(allocator, self.dest, self.source, side, user);
 				return;
@@ -1673,26 +1687,32 @@ pub const Command = struct { // MARK: Command
 			if(self.amount > sourceStack.amount) return;
 
 			var remainingAmount = self.amount;
+			var selectedEmptyInv = false;
 			var selectedEmptySlot: ?u32 = null;
-			for(self.dest._items, 0..) |*destStack, destSlot| {
-				if(destStack.item == null and selectedEmptySlot == null) {
-					selectedEmptySlot = @intCast(destSlot);
-				}
-				if(std.meta.eql(destStack.item, sourceStack.item)) {
-					const amount = @min(sourceStack.item.?.stackSize() - destStack.amount, remainingAmount);
-					if(amount == 0) continue;
-					cmd.executeBaseOperation(allocator, .{.move = .{
-						.dest = .{.inv = self.dest, .slot = @intCast(destSlot)},
-						.source = self.source,
-						.amount = amount,
-					}}, side);
-					remainingAmount -= amount;
-					if(remainingAmount == 0) break;
+			outer: for([2]?Inventory{self.dest, self.fallback}) |_destInv| {
+				if(_destInv) |destInv| {
+					for(destInv._items, 0..) |*destStack, destSlot| {
+						if(destStack.item == null and selectedEmptySlot == null) {
+							selectedEmptyInv = (destInv.source == .playerMainInventory);
+							selectedEmptySlot = @intCast(destSlot);
+						}
+						if(std.meta.eql(destStack.item, sourceStack.item)) {
+							const amount = @min(sourceStack.item.?.stackSize() - destStack.amount, remainingAmount);
+							if(amount == 0) continue;
+							cmd.executeBaseOperation(allocator, .{.move = .{
+								.dest = .{.inv = destInv, .slot = @intCast(destSlot)},
+								.source = self.source,
+								.amount = amount,
+							}}, side);
+							remainingAmount -= amount;
+							if(remainingAmount == 0) break :outer;
+						}
+					}
 				}
 			}
 			if(remainingAmount > 0 and selectedEmptySlot != null) {
 				cmd.executeBaseOperation(allocator, .{.move = .{
-					.dest = .{.inv = self.dest, .slot = selectedEmptySlot.?},
+					.dest = .{.inv = if(!selectedEmptyInv) self.dest else self.fallback.?, .slot = selectedEmptySlot.?},
 					.source = self.source,
 					.amount = remainingAmount,
 				}}, side);
