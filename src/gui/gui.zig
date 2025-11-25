@@ -558,13 +558,14 @@ pub fn updateAndRenderGui() void {
 	for(openWindows.items) |window| {
 		window.update();
 	}
-	if(!hideGui) {
-		if(!main.Window.grabbed) {
-			draw.setColor(0x80000000);
-			GuiWindow.borderPipeline.bind(draw.getScissor());
-			graphics.c.glUniform2f(GuiWindow.borderUniforms.effectLength, main.Window.getWindowSize()[0]/6, main.Window.getWindowSize()[1]/6);
-			draw.customShadedRect(GuiWindow.borderUniforms, .{0, 0}, main.Window.getWindowSize());
-		}
+
+	if(!main.Window.grabbed) {
+		draw.setColor(0x80000000);
+		GuiWindow.borderPipeline.bind(draw.getScissor());
+		graphics.c.glUniform2f(GuiWindow.borderUniforms.effectLength, main.Window.getWindowSize()[0]/6, main.Window.getWindowSize()[1]/6);
+		draw.customShadedRect(GuiWindow.borderUniforms, .{0, 0}, main.Window.getWindowSize());
+	}
+	if(!hideGui or !main.Window.grabbed) {
 		const oldScale = draw.setScale(scale);
 		defer draw.restoreScale(oldScale);
 		for(openWindows.items) |window| {
