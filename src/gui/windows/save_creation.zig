@@ -220,23 +220,3 @@ pub fn onClose() void {
 		comp.deinit();
 	}
 }
-
-pub fn render() void {
-	if (needsUpdate) {
-		var oldWorldName = window.rootComponent.?.verticalList.children.items[0].horizontalList.children.items[1].textInput.currentString.items;
-		oldWorldName = std.fmt.allocPrint(main.stackAllocator.allocator, "{s}", .{oldWorldName}) catch unreachable;
-		defer main.stackAllocator.free(oldWorldName);
-
-		const oldScroll = window.rootComponent.?.verticalList.children.items[2].verticalList.scrollBar.currentState;
-		const oldPage = page;
-
-		onClose();
-		page = oldPage;
-
-		onOpen();
-		window.rootComponent.?.verticalList.children.items[0].horizontalList.children.items[1].textInput.setString(oldWorldName);
-		window.rootComponent.?.verticalList.children.items[2].verticalList.scrollBar.currentState = oldScroll;
-
-		needsUpdate = false;
-	}
-}
