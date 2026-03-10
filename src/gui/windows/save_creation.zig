@@ -19,6 +19,7 @@ const Label = @import("../components/Label.zig");
 const TextInput = @import("../components/TextInput.zig");
 const CheckBox = @import("../components/CheckBox.zig");
 const VerticalList = @import("../components/VerticalList.zig");
+const TabList = @import("../components/TabList.zig");
 
 pub var window = GuiWindow{
 	.contentSize = Vec2f{128, 256},
@@ -44,73 +45,58 @@ var needsUpdate: bool = false;
 var deleteIcon: Texture = undefined;
 var fileExplorerIcon: Texture = undefined;
 
-var page: Page = .generation;
-const numPages: usize = std.meta.fields(Page).len;
+var tabs: *TabList = undefined;
+var tabName: *Label = undefined;
 
-const Page = enum(u8) {
-	generation = 0,
-	gameRules = 1,
-
-	pub fn fillSubmenu(self: Page, submenu: *VerticalList) void {
-		const maxWidth = 192;
-		switch (self) {
-			.generation => {
-				{ // world preset
-					const row = HorizontalList.init();
-					row.add(Label.init(.{0, 0}, maxWidth - 128, "Preset:", .left));
-					presetButton = Button.initText(.{0, 0}, 128, worldPresets[selectedPreset].key_ptr.*, .init(worldPresetCallback));
-					row.add(presetButton);
-					row.finish(.{0, 0}, .center);
-					submenu.add(row);
-				}
-
-				{ // seed
-					const row = HorizontalList.init();
-					row.add(Label.init(.{0, 0}, 48, "Seed:", .left));
-					seedInput = TextInput.init(.{0, 0}, maxWidth - 48, 22, "", .{.onNewline = .init(createWorld)});
-					row.add(seedInput);
-					row.finish(.{0, 0}, .center);
-					submenu.add(row);
-				}
-			},
-			.gameRules => {
-				{
-					const row = HorizontalList.init();
-					row.add(Label.init(.{0, 0}, maxWidth - 96, "Game Mode:", .left));
-					gamemodeInput = Button.initText(.{0, 0}, 96, @tagName(worldSettings.defaultGamemode), .init(gamemodeCallback));
-					row.add(gamemodeInput);
-					row.finish(.{0, 0}, .center);
-					submenu.add(row);
-				}
-
-				submenu.add(CheckBox.init(.{0, 0}, maxWidth, "Allow Cheats", worldSettings.allowCheats, &allowCheatsCallback));
-			},
-		}
+fn getGenerationTab() *VerticalList {
+	const submenu = VerticalList.init(.{0, 0}, 384, 8);
+	const maxWidth = 192;
+	{ // world preset
+		const row = HorizontalList.init();
+		row.add(Label.init(.{0, 0}, maxWidth - 128, "Preset:", .left));
+		presetButton = Button.initText(.{0, 0}, 128, worldPresets[selectedPreset].key_ptr.*, .init(worldPresetCallback));
+		row.add(presetButton);
+		row.finish(.{0, 0}, .center);
+		submenu.add(row);
 	}
 
-	pub fn label(self: Page) []const u8 {
-		switch (self) {
-			.generation => {
-				return "Generation (1/2)";
-			},
-			.gameRules => {
-				return "Game Rules (2/2)";
-			},
-		}
+	{ // seed
+		const row = HorizontalList.init();
+		row.add(Label.init(.{0, 0}, 48, "Seed:", .left));
+		seedInput = TextInput.init(.{0, 0}, maxWidth - 48, 22, "", .{.onNewline = .init(createWorld)});
+		row.add(seedInput);
+		row.finish(.{0, 0}, .center);
+		submenu.add(row);
 	}
-};
+	submenu.finish(.center);
+	return submenu;
+}
+fn getGameruleTab() *VerticalList {
+	const submenu = VerticalList.init(.{0, 0}, 384, 8);
+	const maxWidth = 192;
+	{
+		const row = HorizontalList.init();
+		row.add(Label.init(.{0, 0}, maxWidth - 96, "Game Mode:", .left));
+		gamemodeInput = Button.initText(.{0, 0}, 96, @tagName(worldSettings.defaultGamemode), .init(gamemodeCallback));
+		row.add(gamemodeInput);
+		row.finish(.{0, 0}, .center);
+		submenu.add(row);
+	}
+
+	submenu.add(CheckBox.init(.{0, 0}, maxWidth, "Allow Cheats", worldSettings.allowCheats, &allowCheatsCallback));
+	submenu.finish(.center);
+	return submenu;
+}
 
 fn prevPage() void {
-	const oldPageInt = @intFromEnum(page);
-	const newPageInt = (oldPageInt -% 1);
-	page = std.meta.intToEnum(Page, newPageInt) catch .gameRules;
+	tabs.previousTab();
+	tabName.updateText(tabs.getTitle());
 	needsUpdate = true;
 }
 
 fn nextPage() void {
-	const oldPageInt = @intFromEnum(page);
-	const newPageInt = (oldPageInt + 1);
-	page = std.meta.intToEnum(Page, newPageInt) catch .generation;
+	tabs.nextTab();
+	tabName.updateText(tabs.getTitle());
 	needsUpdate = true;
 }
 
@@ -179,6 +165,10 @@ pub fn onOpen() void {
 		}
 	}
 	if (!needsUpdate) selectedPreset = defaultPreset;
+	tabs = TabList.init(.{0, 8});
+	tabs.add("Generation (1/2)", getGenerationTab());
+	tabs.add("Game Rules (2/2)", getGameruleTab());
+	tabs.finish();
 
 	{ // name field
 		const label = Label.init(.{0, 0}, 96, "World Name:", .center);
@@ -201,20 +191,17 @@ pub fn onOpen() void {
 
 	{ // page title and switch buttons
 		const leftArrow = Button.initText(.{0, 0}, 24, "<", .init(prevPage));
-		const label = Label.init(.{0, 0}, 224 - 48, page.label(), .center);
+		tabName = Label.init(.{0, 0}, 224 - 48, tabs.getTitle(), .center);
 		const rightArrow = Button.initText(.{0, 0}, 24, ">", .init(nextPage));
 		const header = HorizontalList.init();
 		header.add(leftArrow);
-		header.add(label);
+		header.add(tabName);
 		header.add(rightArrow);
 		header.finish(.{0, 0}, .center);
 		list.add(header);
 	}
 
-	const submenu = VerticalList.init(.{0, 8}, 384, 8);
-	page.fillSubmenu(submenu);
-	submenu.finish(.center);
-	list.add(submenu);
+	list.add(tabs);
 
 	if (!build_options.isTaggedRelease) {
 		list.add(CheckBox.init(.{0, 0}, 192, "Testing mode (for developers)", worldSettings.testingMode, &testingModeCallback));
@@ -231,25 +218,5 @@ pub fn onOpen() void {
 pub fn onClose() void {
 	if (window.rootComponent) |*comp| {
 		comp.deinit();
-	}
-}
-
-pub fn render() void {
-	if (needsUpdate) {
-		var oldWorldName = window.rootComponent.?.verticalList.children.items[0].horizontalList.children.items[1].textInput.currentString.items;
-		oldWorldName = std.fmt.allocPrint(main.stackAllocator.allocator, "{s}", .{oldWorldName}) catch unreachable;
-		defer main.stackAllocator.free(oldWorldName);
-
-		const oldScroll = window.rootComponent.?.verticalList.children.items[2].verticalList.scrollBar.currentState;
-		const oldPage = page;
-
-		onClose();
-		page = oldPage;
-
-		onOpen();
-		window.rootComponent.?.verticalList.children.items[0].horizontalList.children.items[1].textInput.setString(oldWorldName);
-		window.rootComponent.?.verticalList.children.items[2].verticalList.scrollBar.currentState = oldScroll;
-
-		needsUpdate = false;
 	}
 }
