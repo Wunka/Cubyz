@@ -58,6 +58,7 @@ pub fn add(self: *TabList, title: []const u8, _other: anytype) void {
 pub fn finish(self: *TabList) void {
 	for (self.tabs.items) |*tab| {
 		if (tab.size()[1] > self.size[1]) self.size[1] = tab.size()[1];
+		if (tab.size()[0] > self.size[0]) self.size[0] = tab.size()[0];
 	}
 }
 
