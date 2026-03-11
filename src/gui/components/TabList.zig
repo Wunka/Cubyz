@@ -53,7 +53,6 @@ pub fn add(self: *TabList, title: []const u8, _other: anytype) void {
 	}
 	self.tabs.append(other);
 	self.tabNames.append(title);
-	if (self.tabs.items.len == 1) self.setValues();
 }
 
 pub fn finish(self: *TabList) void {
@@ -70,19 +69,13 @@ pub fn getTitle(self: *TabList) []const u8 {
 	return self.tabNames.items[self.currentTab];
 }
 
-pub fn setValues(self: *TabList) void {
-	self.size = self.getCurrentGuiComponent().size();
-}
-
 pub fn nextTab(self: *TabList) void {
 	self.currentTab = (self.currentTab + 1)%self.tabs.items.len;
-	self.setValues();
 }
 
 pub fn previousTab(self: *TabList) void {
 	if (self.currentTab == 0) self.currentTab = self.tabs.items.len;
 	self.currentTab = (self.currentTab - 1)%self.tabs.items.len;
-	self.setValues();
 }
 
 pub fn updateSelected(self: *TabList) void {
