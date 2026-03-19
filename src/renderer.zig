@@ -599,16 +599,17 @@ pub const MenuBackGround = struct {
 	}
 
 	pub fn takeBackgroundImage() void {
-		const size: usize = 1024; // Use a power of 2 here, to reduce video memory waste.
-		const pixels: []u32 = main.stackAllocator.alloc(u32, size*size);
+		const width: usize = 15360;
+		const height: usize = 6480;
+		const pixels: []u32 = main.stackAllocator.alloc(u32, width*height);
 		defer main.stackAllocator.free(pixels);
 
 		// Change the viewport and the matrices to render 4 cube faces:
 
 		const oldResolutionScale = main.settings.resolutionScale;
 		main.settings.resolutionScale = 1;
-		updateViewport(size, size);
-		updateFov(90.0);
+		updateViewport(width, height);
+		updateFov(40.0);
 		defer updateFov(main.settings.fov);
 		main.settings.resolutionScale = oldResolutionScale;
 		defer updateViewport(Window.width, Window.height);
@@ -616,7 +617,7 @@ pub const MenuBackGround = struct {
 		var buffer: graphics.FrameBuffer = undefined;
 		buffer.init(true, c.GL_NEAREST, c.GL_REPEAT);
 		defer buffer.deinit();
-		buffer.updateSize(size, size, c.GL_RGBA8);
+		buffer.updateSize(width, height, c.GL_RGBA8);
 
 		activeFrameBuffer = buffer.frameBuffer;
 		defer activeFrameBuffer = 0;
@@ -624,31 +625,29 @@ pub const MenuBackGround = struct {
 		const oldRotation = game.camera.rotation;
 		defer game.camera.rotation = oldRotation;
 
-		const angles = [_]f32{std.math.pi/2.0, std.math.pi, std.math.pi*3/2.0, std.math.pi*2};
+		// const angles = [_]f32{std.math.pi/2.0, std.math.pi, std.math.pi*3/2.0, std.math.pi*2};
 
 		// All 4 sides are stored in a single image.
-		const image = graphics.Image.init(main.stackAllocator, 4*size, size);
+		const image = graphics.Image.init(main.stackAllocator, width, height);
 		defer image.deinit(main.stackAllocator);
 
-		for (0..4) |i| {
-			c.glDepthFunc(c.GL_LESS);
-			c.glDepthMask(c.GL_TRUE);
-			c.glDisable(c.GL_SCISSOR_TEST);
-			game.camera.rotation = .{0, 0, angles[i]};
-			// Draw to frame buffer.
-			buffer.bind();
-			c.glClear(c.GL_DEPTH_BUFFER_BIT | c.GL_STENCIL_BUFFER_BIT | c.GL_COLOR_BUFFER_BIT);
-			main.renderer.render(game.Player.getEyePosBlocking(), 0);
-			// Copy the pixels directly from OpenGL
-			buffer.bind();
-			c.glReadPixels(0, 0, size, size, c.GL_RGBA, c.GL_UNSIGNED_BYTE, pixels.ptr);
+		c.glDepthFunc(c.GL_LESS);
+		c.glDepthMask(c.GL_TRUE);
+		c.glDisable(c.GL_SCISSOR_TEST);
+		// game.camera.rotation = .{0, 0, angles[i]};
+		// Draw to frame buffer.
+		buffer.bind();
+		c.glClear(c.GL_DEPTH_BUFFER_BIT | c.GL_STENCIL_BUFFER_BIT | c.GL_COLOR_BUFFER_BIT);
+		main.renderer.render(game.Player.getEyePosBlocking(), 0);
+		// Copy the pixels directly from OpenGL
+		buffer.bind();
+		c.glReadPixels(0, 0, width, height, c.GL_RGBA, c.GL_UNSIGNED_BYTE, pixels.ptr);
 
-			for (0..size) |y| {
-				for (0..size) |x| {
-					const index = x + y*size;
-					// Needs to flip the image in y-direction.
-					image.setRGB(x + size*i, size - 1 - y, @bitCast(pixels[index]));
-				}
+		for (0..height) |y| {
+			for (0..width) |x| {
+				const index = x + y*width;
+				// Needs to flip the image in y-direction.
+				image.setRGB(x, height - 1 - y, @bitCast(pixels[index]));
 			}
 		}
 		c.glBindFramebuffer(c.GL_FRAMEBUFFER, 0);
