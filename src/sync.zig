@@ -804,6 +804,9 @@ pub const Command = struct { // MARK: Command
 				.blockInventory => |val| {
 					writer.writeVec(Vec3i, val);
 				},
+				.workbench => |val| {
+					writer.writeInt(u32, val.playerId);
+				},
 				.other => {},
 				.alreadyFreed => unreachable,
 			}
@@ -825,6 +828,7 @@ pub const Command = struct { // MARK: Command
 				.playerInventory => .{.playerInventory = try reader.readInt(u32)},
 				.hand => .{.hand = try reader.readInt(u32)},
 				.blockInventory => .{.blockInventory = try reader.readVec(Vec3i)},
+				.workbench => .{.workbench = .{.playerId = try reader.readInt(u32)}},
 				.other => .{.other = {}},
 				.alreadyFreed => return error.Invalid,
 			};
@@ -1604,7 +1608,7 @@ pub const Command = struct { // MARK: Command
 			if (ctx.side == .server) {
 				const user = ctx.user orelse return;
 				if (main.server.world.?.settings.allowCheats) {
-					std.log.info("User \"{s}\" executed command \"{s}\"", .{user.name, self.message}); // TODO use color \033[0;32m
+					std.log.info("User \"{f}\" executed command \"{s}\"", .{user, self.message}); // TODO use color \033[0;32m
 					main.server.command.execute(self.message, user);
 				} else {
 					user.sendRawMessage("Commands are not allowed because cheats are disabled");
