@@ -599,8 +599,8 @@ pub const MenuBackGround = struct {
 	}
 
 	pub fn takeBackgroundImage() void {
-		const width: usize = 15360;
-		const height: usize = 6480;
+		const width: usize = 3840;
+		const height: usize = 2160;
 		const pixels: []u32 = main.stackAllocator.alloc(u32, width*height);
 		defer main.stackAllocator.free(pixels);
 
