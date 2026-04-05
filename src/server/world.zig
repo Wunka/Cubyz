@@ -440,6 +440,7 @@ pub const ServerWorld = struct { // MARK: ServerWorld
 
 	path: []const u8,
 	name: []const u8 = &.{},
+	info: []const u8 = &.{},
 	spawn: Vec3i = undefined,
 
 	mutex: std.Thread.Mutex = .{},
@@ -499,6 +500,7 @@ pub const ServerWorld = struct { // MARK: ServerWorld
 		const worldData = try dir.readToZon(arena, "world.zig.zon");
 		try self.loadWorldConfig(arena, dir, worldData);
 		try self.loadPlayerLoginInfo(dir);
+		self.info = main.globalAllocator.dupe(u8, worldData.get([]const u8, "info", "No Info set"));
 
 		try main.assets.loadWorldAssets(try std.fmt.allocPrint(arena.allocator, "{s}/saves/{s}/assets/", .{files.cubyzDirStr(), path}), self.blockPalette, self.itemPalette, self.toolPalette, self.biomePalette);
 		// Store the block palette now that everything is loaded.
@@ -544,6 +546,7 @@ pub const ServerWorld = struct { // MARK: ServerWorld
 		self.biomePalette.deinit();
 		main.globalAllocator.free(self.path);
 		main.globalAllocator.free(self.name);
+		main.globalAllocator.free(self.info);
 		main.globalAllocator.destroy(self);
 	}
 
@@ -633,6 +636,7 @@ pub const ServerWorld = struct { // MARK: ServerWorld
 		worldData.put("spawn", self.spawn);
 		worldData.put("biomeChecksum", self.biomeChecksum);
 		worldData.put("name", self.name);
+		worldData.put("info", self.info);
 		worldData.put("lastUsedTime", (try std.Io.Clock.Timestamp.now(main.io, .real)).raw.toMilliseconds());
 		worldData.put("tickSpeed", self.tickSpeed.load(.monotonic));
 
