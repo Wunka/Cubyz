@@ -94,14 +94,26 @@ fn parsePlayerIndexAndIncreaseRefCount(playerIndex: []const u8, source: *User) !
 pub const Target = struct {
 	user: *User,
 	increasedRefCount: bool,
+	remove: bool,
 
 	pub fn init(split: *std.mem.SplitIterator(u8, .scalar), source: *User) !Target {
 		var increasedRefCount = false;
+		var remove = false;
 		const user: *User = blk: {
-			const userIndex = split.peek() orelse {
+			var userIndex = split.peek() orelse {
 				source.sendMessage("#ff0000Too few arguments for command", .{});
 				return error.TooFewArguments;
 			};
+			if (userIndex[0] == '!') {
+				remove = true;
+				userIndex = userIndex[1..];
+			}
+			if (std.mem.eql(u8, userIndex, "@s")) {
+				source.increaseRefCount();
+				increasedRefCount = true;
+				_ = split.next();
+				break :blk source;
+			}
 			if (userIndex[0] == '@') {
 				const user = parsePlayerIndexAndIncreaseRefCount(userIndex, source) catch return error.InvalidArgs;
 				increasedRefCount = true;
@@ -110,10 +122,76 @@ pub const Target = struct {
 			}
 			break :blk source;
 		};
-		return .{.user = user, .increasedRefCount = increasedRefCount};
+		return .{.user = user, .increasedRefCount = increasedRefCount, .remove = remove};
 	}
 
 	pub fn deinit(self: Target) void {
 		if (self.increasedRefCount) self.user.decreaseRefCount();
+	}
+};
+
+pub const Targets = struct {
+	users: []*User,
+
+	pub fn init(split: *std.mem.SplitIterator(u8, .scalar), allocator: main.heap.NeverFailingAllocator, source: *User) !Targets {
+		var userList: main.List(*User) = .init(allocator);
+		errdefer {
+			for (userList.items) |user| {
+				user.decreaseRefCount();
+			}
+			userList.deinit();
+		}
+		const arg = split.peek() orelse {
+			source.sendMessage("#ff0000Too few arguments for command", .{});
+			return error.TooFewArguments;
+		};
+		if (arg[0] == '@') {
+			_ = split.next();
+			var userSplit = std.mem.splitScalar(u8, arg, ',');
+			while (userSplit.peek()) |splitArg| {
+				if (std.mem.eql(u8, splitArg, "@all")) {
+					_ = userSplit.next();
+					const allUsers = main.server.getUserListAndIncreaseRefCount(main.stackAllocator);
+					defer main.server.freeUserListAndDecreaseRefCount(main.stackAllocator, allUsers);
+
+					for (allUsers) |target| {
+						modify(&userList, target, false);
+					}
+					continue;
+				}
+				const target: Target = try .init(&userSplit, source);
+				defer target.deinit();
+				if (!target.increasedRefCount) break;
+				modify(&userList, target.user, target.remove);
+			}
+		} else {
+			modify(&userList, source, false);
+		}
+		return .{.users = userList.toOwnedSlice()};
+	}
+
+	pub fn deinit(self: Targets, allocator: main.heap.NeverFailingAllocator) void {
+		main.server.freeUserListAndDecreaseRefCount(allocator, self.users);
+	}
+
+	fn getIndex(userList: *main.List(*User), user: *User) ?usize {
+		for (userList.items, 0..) |member, i| {
+			if (member.playerIndex == user.playerIndex) {
+				return i;
+			}
+		}
+		return null;
+	}
+
+	fn modify(userList: *main.List(*User), user: *User, remove: bool) void {
+		if (remove) {
+			const index = getIndex(userList, user) orelse return;
+			userList.items[index].decreaseRefCount();
+			_ = userList.swapRemove(index);
+		} else {
+			if (getIndex(userList, user) != null) return;
+			user.increaseRefCount();
+			userList.append(user);
+		}
 	}
 };
