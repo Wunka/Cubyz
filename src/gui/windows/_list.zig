@@ -38,3 +38,5 @@ pub const workbench = @import("workbench.zig");
 pub const @"authentication/create_account" = @import("authentication/create_account.zig");
 pub const @"authentication/login" = @import("authentication/login.zig");
 pub const @"authentication/unlock" = @import("authentication/unlock.zig");
+
+pub const ci_window = @import("CI/CIWindow.zig");

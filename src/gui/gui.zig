@@ -749,7 +749,7 @@ pub const inventory = struct { // MARK: inventory
 			} else if (hoveredItemSlot) |hovered| {
 				if (hovered.inventory.type == .crafting or hovered.inventory.type == .workbenchResult) return;
 				if (main.KeyBoard.key("mainGuiButton").modsOnPress.shift) {
-					if (hovered.inventory.type == .creative) {
+					if (hovered.inventory.type == .creative and main.game.Player.isCreative()) {
 						const item = hovered.inventory.getItem(hovered.itemSlot);
 						ClientInventory.fillAnyFromCreative(&.{main.game.Player.inventory}, item, item.stackSize());
 					}

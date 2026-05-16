@@ -220,7 +220,6 @@ fn ungrabMouse(_: Window.Key.Modifiers) void {
 }
 fn openCreativeInventory(mods: Window.Key.Modifiers) void {
 	if (game.world == null) return;
-	if (!game.Player.isCreative()) return;
 	ungrabMouse(mods);
 	gui.openWindow("creative_inventory");
 }
