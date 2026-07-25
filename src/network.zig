@@ -257,7 +257,7 @@ pub const Address = struct {
 const Request = struct {
 	address: Address,
 	data: []const u8,
-	requestNotifier: main.utils.Condition = .{},
+	requestNotifier: main.utils.Condition = .init,
 };
 
 /// Implements parts of the STUN(Session Traversal Utilities for NAT) protocol to discover public IP+Port
@@ -481,7 +481,7 @@ pub const ConnectionManager = struct { // MARK: ConnectionManager
 	requests: main.List(*Request) = .empty,
 
 	mutex: main.utils.Mutex = .{},
-	waitingToFinishReceive: main.utils.Condition = .{},
+	waitingToFinishReceive: main.utils.Condition = .init,
 	allowNewConnections: bool,
 
 	receiveBuffer: [Connection.maxMtu]u8 = undefined,
@@ -561,7 +561,7 @@ pub const ConnectionManager = struct { // MARK: ConnectionManager
 		defer self.mutex.unlock();
 
 		for (self.requests.items) |request| {
-			request.requestNotifier.signal();
+			request.requestNotifier.signal(main.io);
 		}
 		self.requests.deinit(main.globalAllocator);
 
@@ -604,7 +604,7 @@ pub const ConnectionManager = struct { // MARK: ConnectionManager
 			defer self.mutex.unlock();
 			self.requests.append(main.globalAllocator, &request);
 
-			request.requestNotifier.timedWait(&self.mutex, timeout) catch {};
+			request.requestNotifier.waitTimeout(main.io, &self.mutex.super, .{.duration = .{.raw = timeout, .clock = .awake}}) catch {};
 
 			for (self.requests.items, 0..) |req, i| {
 				if (req == &request) {
@@ -641,7 +641,7 @@ pub const ConnectionManager = struct { // MARK: ConnectionManager
 		std.debug.assert(self.threadId != std.Thread.getCurrentId()); // WOuld cause deadlock, since we are in a receive.
 		self.mutex.lock();
 		defer self.mutex.unlock();
-		self.waitingToFinishReceive.wait(&self.mutex);
+		self.waitingToFinishReceive.wait(main.io, &self.mutex.super) catch unreachable;
 	}
 
 	pub fn removeConnection(self: *ConnectionManager, conn: *Connection) void {
@@ -679,7 +679,7 @@ pub const ConnectionManager = struct { // MARK: ConnectionManager
 			for (self.requests.items) |request| {
 				if (request.address.ip == source.ip and request.address.port == source.port) {
 					request.data = main.globalAllocator.dupe(u8, data);
-					request.requestNotifier.signal();
+					request.requestNotifier.signal(main.io);
 					return;
 				}
 			}
@@ -712,7 +712,7 @@ pub const ConnectionManager = struct { // MARK: ConnectionManager
 		var lastExternalPacketTime = lastTime;
 		while (self.running.load(.monotonic)) {
 			main.heap.GarbageCollection.syncPoint();
-			self.waitingToFinishReceive.broadcast();
+			self.waitingToFinishReceive.broadcast(main.io);
 			var source: Address = undefined;
 			if (self.socket.receive(&self.receiveBuffer, 1, &source)) |data| {
 				self.onReceive(data, source);
@@ -1477,7 +1477,7 @@ pub const Connection = struct { // MARK: Connection
 
 	connectionState: Atomic(ConnectionState),
 	handShakeState: Atomic(HandShakeState) = .init(.start),
-	handShakeWaiting: main.utils.Condition = .{},
+	handShakeWaiting: main.utils.Condition = .init,
 	lastConnectionTime: ?i64,
 
 	// To distinguish different connections from the same computer to avoid multiple reconnects
@@ -1918,7 +1918,7 @@ pub const Connection = struct { // MARK: Connection
 		if (self.user) |user| {
 			main.server.disconnect(user);
 		} else {
-			self.handShakeWaiting.broadcast();
+			self.handShakeWaiting.broadcast(main.io);
 			if (self.handShakeState.load(.monotonic) == .complete) {
 				main.exitToMenu();
 			}
