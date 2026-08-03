@@ -559,6 +559,11 @@ pub fn secondaryButtonReleased(_: main.Window.Key.Modifiers) void {
 	inventory.applyChanges(false);
 }
 
+pub fn help(_: main.Window.Key.Modifiers) void {
+	std.debug.print("{any}", .{@src()});
+	inventory.help();
+}
+
 pub fn updateWindowPositions() void {
 	var wasChanged: bool = true;
 	while (wasChanged) {
@@ -828,6 +833,20 @@ pub const inventory = struct { // MARK: inventory
 				carried.dropOne(0);
 			}
 		}
+	}
+
+	fn help() void {
+		std.debug.print("{any}", .{@src()});
+		if (!initialized) return;
+		std.debug.print("{any}", .{@src()});
+		if (main.game.world == null) return;
+		std.debug.print("{any}", .{@src()});
+		const itemSlot = hoveredItemSlot orelse return;
+		std.debug.print("{any}", .{@src()});
+		const item = itemSlot.inventory.getItem(itemSlot.itemSlot);
+		if (item != .baseItem) return;
+		std.debug.print("{any}", .{@src()});
+		windowlist.ci_window.openWithItem(item.baseItem);
 	}
 
 	fn render(mousePos: Vec2f) void {
