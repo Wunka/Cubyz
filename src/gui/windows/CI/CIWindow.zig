@@ -106,9 +106,13 @@ fn findAvailableRecipes(list: *VerticalList) bool {
 
 	if (resultItem == null) return true;
 	for (items.getRecipes()) |*recipe| {
-		if (recipe.resultItem != resultItem.?) {
-			continue;
-		}
+		const found = blk: {
+			for (recipe.sourceItems) |sourceItem| {
+				if (sourceItem == resultItem.?) break :blk true;
+			}
+			break :blk false;
+		};
+		if (!found) continue;
 		// All ingredients found: Add it to the list.
 		const inv = ClientInventory.init(main.globalAllocator, recipe.sourceItems.len + 1, .{.crafting = recipe}, .other, .{});
 
