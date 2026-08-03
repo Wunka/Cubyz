@@ -677,7 +677,7 @@ const PosixImpl = struct {
 
 		// Global array of buckets that addresses map to.
 		// Bucket array size is pretty much arbitrary here, but it must be a power of two for fibonacci hashing.
-		var buckets = [_]Bucket{.{}} ** @bitSizeOf(usize);
+		var buckets: [@bitSizeOf(usize)]Bucket = @splat(.{});
 
 		// https://github.com/Amanieu/parking_lot/blob/1cf12744d097233316afa6c8b7d37389e4211756/core/src/parking_lot.rs#L343-L353
 		fn from(address: usize) *Bucket {

@@ -285,9 +285,9 @@ pub const FaceData = extern struct {
 };
 
 pub const ChunkData = extern struct {
-	position: Vec3i align(16),
-	min: Vec3f align(16),
-	max: Vec3f align(16),
+	position: [3]i32 align(16),
+	min: [3]f32 align(16),
+	max: [3]f32 align(16),
 	voxelSize: i32,
 	lightStart: u32,
 	vertexStartOpaque: u32,

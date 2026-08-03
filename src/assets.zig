@@ -740,13 +740,13 @@ pub fn loadWorldAssets(assetFolder: []const u8, blockPalette: *Palette, itemPale
 		}
 
 		// now give each component it's id:
-		inline for (@typeInfo(main.entity.components).@"struct".decls) |decl| {
-			const name = decl.name;
+		inline for (@typeInfo(main.entity.components).@"struct".decl_names) |declName| {
+			const name = declName;
 			if (map.get(name)) |id| {
-				@field(main.entity.components, decl.name).entityComponentID = id;
+				@field(main.entity.components, declName).entityComponentID = id;
 			} else {
 				entityComponentPalette.add(name);
-				@field(main.entity.components, decl.name).entityComponentID = index;
+				@field(main.entity.components, declName).entityComponentID = index;
 				index += 1;
 			}
 		}

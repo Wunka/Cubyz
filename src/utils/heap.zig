@@ -452,7 +452,7 @@ pub const NeverFailingAllocator = struct { // MARK: NeverFailingAllocator
 	///   change the size without relocating the allocation.
 	pub fn realloc(self: NeverFailingAllocator, old_mem: anytype, new_n: usize) t: {
 		const Slice = @typeInfo(@TypeOf(old_mem)).pointer;
-		break :t []align(Slice.alignment orelse @alignOf(Slice.child)) Slice.child;
+		break :t []align(Slice.attrs.@"align" orelse @alignOf(Slice.child)) Slice.child;
 	} {
 		return self.allocator.realloc(old_mem, new_n) catch unreachable;
 	}
@@ -483,7 +483,7 @@ pub const NeverFailingAllocator = struct { // MARK: NeverFailingAllocator
 
 	/// Copies `m` to newly allocated memory, with a null-terminated element. Caller owns the memory.
 	pub fn dupeZ(self: NeverFailingAllocator, comptime T: type, m: []const T) [:0]T {
-		return self.allocator.dupeZ(T, m) catch unreachable;
+		return self.allocator.dupeSentinel(T, m, 0) catch unreachable;
 	}
 
 	/// Allocates a formatted string which is returned on success.

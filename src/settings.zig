@@ -71,7 +71,7 @@ pub var updateRepeatDelay: std.Io.Duration = .fromMilliseconds(500);
 
 pub var controllerAxisDeadzone: f32 = 0.2;
 
-const settingsFile = if (builtin.mode == .Debug) "debug_settings.zig.zon" else "settings.zig.zon";
+const settingsFile = if (builtin.mode == .debug) "debug_settings.zig.zon" else "settings.zig.zon";
 
 pub fn init() void {
 	const zon: ZonElement = main.files.cubyzDir().readToZon(main.stackAllocator, settingsFile) catch |err| blk: {
@@ -82,29 +82,29 @@ pub fn init() void {
 	};
 	defer zon.deinit(main.stackAllocator);
 
-	inline for (@typeInfo(@This()).@"struct".decls) |decl| runtimeContinueInsideOfComptimeBlock: {
-		const is_const = @typeInfo(@TypeOf(&@field(@This(), decl.name))).pointer.is_const; // Sadly there is no direct way to check if a declaration is const.
+	inline for (@typeInfo(@This()).@"struct".decl_names) |declName| runtimeContinueInsideOfComptimeBlock: {
+		const is_const = @typeInfo(@TypeOf(&@field(@This(), declName))).pointer.attrs.@"const"; // Sadly there is no direct way to check if a declaration is const.
 		if (!is_const) {
-			comptime var DeclType = @TypeOf(@field(@This(), decl.name));
+			comptime var DeclType = @TypeOf(@field(@This(), declName));
 			if (@typeInfo(DeclType) == .optional) {
 				DeclType = @typeInfo(DeclType).optional.child;
 			}
 			if (@typeInfo(DeclType) == .@"struct") {
 				if (DeclType == std.Io.Duration) {
-					const defaultMilli = @as(f64, @floatFromInt(@field(@This(), decl.name).toNanoseconds()))/1.0e6;
-					@field(@This(), decl.name) = .fromNanoseconds(@trunc((zon.get(f64, decl.name) orelse defaultMilli)*1.0e6));
+					const defaultMilli = @as(f64, @floatFromInt(@field(@This(), declName).toNanoseconds()))/1.0e6;
+					@field(@This(), declName) = .fromNanoseconds(@trunc((zon.get(f64, declName) orelse defaultMilli)*1.0e6));
 					continue;
 				}
-				@field(@This(), decl.name) = DeclType.fromZon(main.globalAllocator, zon.getChild(decl.name)) catch |err| {
-					std.log.err("Got error while loading setting {s}: {s}", .{decl.name, @errorName(err)});
+				@field(@This(), declName) = DeclType.fromZon(main.globalAllocator, zon.getChild(declName)) catch |err| {
+					std.log.err("Got error while loading setting {s}: {s}", .{declName, @errorName(err)});
 					break :runtimeContinueInsideOfComptimeBlock;
 				};
 				continue;
 			}
-			@field(@This(), decl.name) = zon.get(DeclType, decl.name) orelse @field(@This(), decl.name);
+			@field(@This(), declName) = zon.get(DeclType, declName) orelse @field(@This(), declName);
 			if (@typeInfo(DeclType) == .pointer) {
 				if (@typeInfo(DeclType).pointer.size == .slice) {
-					@field(@This(), decl.name) = main.globalAllocator.dupe(@typeInfo(DeclType).pointer.child, @field(@This(), decl.name));
+					@field(@This(), declName) = main.globalAllocator.dupe(@typeInfo(DeclType).pointer.child, @field(@This(), declName));
 				} else {
 					@compileError("Not implemented yet.");
 				}
@@ -129,18 +129,18 @@ pub fn init() void {
 
 pub fn deinit() void {
 	save();
-	inline for (@typeInfo(@This()).@"struct".decls) |decl| {
-		const is_const = @typeInfo(@TypeOf(&@field(@This(), decl.name))).pointer.is_const; // Sadly there is no direct way to check if a declaration is const.
+	inline for (@typeInfo(@This()).@"struct".decl_names) |declName| {
+		const is_const = @typeInfo(@TypeOf(&@field(@This(), declName))).pointer.attrs.@"const"; // Sadly there is no direct way to check if a declaration is const.
 		if (!is_const) {
-			const DeclType = @TypeOf(@field(@This(), decl.name));
+			const DeclType = @TypeOf(@field(@This(), declName));
 			if (@typeInfo(DeclType) == .@"struct") {
 				if (DeclType == std.Io.Duration) continue;
-				@field(@This(), decl.name).deinit(main.globalAllocator);
+				@field(@This(), declName).deinit(main.globalAllocator);
 				continue;
 			}
 			if (@typeInfo(DeclType) == .pointer) {
 				if (@typeInfo(DeclType).pointer.size == .slice) {
-					main.globalAllocator.free(@field(@This(), decl.name));
+					main.globalAllocator.free(@field(@This(), declName));
 				} else {
 					@compileError("Not implemented yet.");
 				}
@@ -153,26 +153,26 @@ pub fn save() void {
 	var zonObject = ZonElement.initObject(main.stackAllocator);
 	defer zonObject.deinit(main.stackAllocator);
 
-	inline for (@typeInfo(@This()).@"struct".decls) |decl| {
-		if (comptime std.mem.eql(u8, decl.name, "lastVersionString")) {
-			zonObject.put(decl.name, version.version);
+	inline for (@typeInfo(@This()).@"struct".decl_names) |declName| {
+		if (comptime std.mem.eql(u8, declName, "lastVersionString")) {
+			zonObject.put(declName, version.version);
 			continue;
 		}
-		const is_const = @typeInfo(@TypeOf(&@field(@This(), decl.name))).pointer.is_const; // Sadly there is no direct way to check if a declaration is const.
+		const is_const = @typeInfo(@TypeOf(&@field(@This(), declName))).pointer.attrs.@"const"; // Sadly there is no direct way to check if a declaration is const.
 		if (!is_const) {
-			const DeclType = @TypeOf(@field(@This(), decl.name));
+			const DeclType = @TypeOf(@field(@This(), declName));
 			if (@typeInfo(DeclType) == .@"struct") {
 				if (DeclType == std.Io.Duration) {
-					zonObject.put(decl.name, @as(f64, @floatFromInt(@field(@This(), decl.name).toNanoseconds()))/1.0e6);
+					zonObject.put(declName, @as(f64, @floatFromInt(@field(@This(), declName).toNanoseconds()))/1.0e6);
 					continue;
 				}
-				zonObject.put(decl.name, @field(@This(), decl.name).toZon(main.stackAllocator));
+				zonObject.put(declName, @field(@This(), declName).toZon(main.stackAllocator));
 				continue;
 			}
 			if (DeclType == []const u8) {
-				zonObject.putOwnedString(decl.name, @field(@This(), decl.name));
+				zonObject.putOwnedString(declName, @field(@This(), declName));
 			} else {
-				zonObject.put(decl.name, @field(@This(), decl.name));
+				zonObject.put(declName, @field(@This(), declName));
 			}
 		}
 	}

@@ -72,10 +72,10 @@ pub const SdfModel = struct { // MARK: SdfModel
 	}
 
 	const modelRegistry: std.StaticStringMap(VTable) = .initComptime(blk: {
-		const decls = @typeInfo(sdf_models).@"struct".decls;
-		var generators: [decls.len]struct { []const u8, VTable } = undefined;
-		for (0..decls.len) |i| {
-			const Generator = @field(sdf_models, decls[i].name);
+		const declNames = @typeInfo(sdf_models).@"struct".decl_names;
+		var generators: [declNames.len]struct { []const u8, VTable } = undefined;
+		for (0..declNames.len) |i| {
+			const Generator = @field(sdf_models, declNames[i]);
 			generators[i] = .{Generator.id, .{
 				.initAndGetExtend = Generator.initAndGetExtend,
 				.instantiate = main.meta.castFunctionSelfToAnyopaque(Generator.instantiate),

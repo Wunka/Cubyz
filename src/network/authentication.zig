@@ -63,7 +63,7 @@ pub const KeyCollection = struct { // Provides multiple methods to allow server 
 			"4t7z3592a09p85z4piotfh7z",
 			"u89564epogz1qi9up5zc94309",
 		};
-		inline for (comptime std.meta.declarations(Storage), 0..) |decl, i| {
+		inline for (comptime std.meta.declarations(Storage), 0..) |declName, i| {
 			const hashableString = std.mem.concat(main.stackAllocator.allocator, u8, &.{accountCode.text, keySalts[i]}) catch unreachable;
 			defer main.stackAllocator.free(hashableString);
 			defer @memset(hashableString, 0);
@@ -77,10 +77,10 @@ pub const KeyCollection = struct { // Provides multiple methods to allow server 
 				hashedResult = out;
 			}
 
-			const functionType = @TypeOf(@TypeOf(@field(Storage, decl.name)).generateDeterministic);
-			const seed = hashedResult[0..@sizeOf(@typeInfo(functionType).@"fn".params[0].type.?)].*;
+			const functionType = @TypeOf(@TypeOf(@field(Storage, declName)).generateDeterministic);
+			const seed = hashedResult[0..@sizeOf(@typeInfo(functionType).@"fn".param_types[0].?)].*;
 
-			@field(Storage, decl.name) = @TypeOf(@field(Storage, decl.name)).generateDeterministic(seed) catch @panic("Failed to generate key pair for " ++ decl.name);
+			@field(Storage, declName) = @TypeOf(@field(Storage, declName)).generateDeterministic(seed) catch @panic("Failed to generate key pair for " ++ declName);
 		}
 		initialized = true;
 	}
@@ -88,16 +88,16 @@ pub const KeyCollection = struct { // Provides multiple methods to allow server 
 	pub fn getPublicKeys(allocator: NeverFailingAllocator) ZonElement {
 		std.debug.assert(initialized);
 		const result = ZonElement.initObject(allocator);
-		inline for (comptime std.meta.declarations(Storage)) |decl| {
+		inline for (comptime std.meta.declarations(Storage)) |declName| {
 			const bytes = blk: {
-				if (@hasDecl(@TypeOf(@field(Storage, decl.name).public_key), "toBytes")) {
-					break :blk @field(Storage, decl.name).public_key.toBytes();
+				if (@hasDecl(@TypeOf(@field(Storage, declName).public_key), "toBytes")) {
+					break :blk @field(Storage, declName).public_key.toBytes();
 				} else {
-					break :blk @field(Storage, decl.name).public_key.toUncompressedSec1();
+					break :blk @field(Storage, declName).public_key.toUncompressedSec1();
 				}
 			};
 			var base64: [std.base64.standard.Encoder.calcSize(bytes.len)]u8 = undefined;
-			result.putOwnedString(decl.name, std.base64.standard.Encoder.encode(&base64, &bytes));
+			result.putOwnedString(declName, std.base64.standard.Encoder.encode(&base64, &bytes));
 		}
 		return result;
 	}

@@ -37,9 +37,9 @@ fn Callback(_Params: type, list: type) type {
 		var eventCreationMap: std.StringHashMapUnmanaged(VTable) = .{};
 
 		fn globalInit() void {
-			inline for (@typeInfo(list).@"struct".decls) |decl| {
-				const CallbackStruct = @field(list, decl.name);
-				eventCreationMap.put(main.globalArena.allocator, decl.name, .{
+			inline for (@typeInfo(list).@"struct".decl_names) |declName| {
+				const CallbackStruct = @field(list, declName);
+				eventCreationMap.put(main.globalArena.allocator, declName, .{
 					.init = main.meta.castFunctionReturnToOptionalAnyopaque(CallbackStruct.init),
 					.run = main.meta.castFunctionSelfToAnyopaque(CallbackStruct.run),
 				}) catch unreachable;

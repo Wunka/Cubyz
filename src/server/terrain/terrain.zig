@@ -42,10 +42,10 @@ pub const BlockGenerator = struct {
 	defaultState: GeneratorState,
 
 	const generatorRegistry: std.StaticStringMap(BlockGenerator) = .initComptime(blk: {
-		const decls = @typeInfo(chunk_generators).@"struct".decls;
-		var generators: [decls.len]struct { []const u8, BlockGenerator } = undefined;
-		for (0..decls.len) |i| {
-			const Generator = @field(chunk_generators, decls[i].name);
+		const declNames = @typeInfo(chunk_generators).@"struct".decl_names;
+		var generators: [declNames.len]struct { []const u8, BlockGenerator } = undefined;
+		for (0..declNames.len) |i| {
+			const Generator = @field(chunk_generators, declNames[i]);
 			generators[i] = .{Generator.id, .{
 				.init = &Generator.init,
 				.generate = &Generator.generate,

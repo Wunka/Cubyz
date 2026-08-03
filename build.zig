@@ -87,11 +87,14 @@ fn linkLibraries(b: *std.Build, exe: *std.Build.Step.Compile, useLocalDeps: bool
 	}
 }
 
-pub fn makeModFeature(io: std.Io, step: *std.Build.Step, name: []const u8) !void {
+pub fn makeModFeature(io: std.Io, b: *std.Build, name: []const u8) !*std.Build.Step {
+	const update = b.addUpdateSourceFiles();
+	const step = &update.step;
 	var featureList: std.ArrayListUnmanaged(u8) = .empty;
 	defer featureList.deinit(step.owner.allocator);
 
 	var modDir = try std.Io.Dir.cwd().openDir(io, "mods", .{.iterate = true});
+
 	defer modDir.close(io);
 
 	var iterator = modDir.iterate();
@@ -150,7 +153,8 @@ pub fn makeModFeature(io: std.Io, step: *std.Build.Step, name: []const u8) !void
 	}
 
 	const file_path = step.owner.fmt("mods/{s}.zig", .{name});
-	try std.Io.Dir.cwd().writeFile(io, .{.data = featureList.items, .sub_path = file_path});
+	update.addBytesToSource(featureList.items, file_path);
+	return step;
 }
 
 pub fn addModFeatureModule(b: *std.Build, exe: *std.Build.Step.Compile, name: []const u8) !void {
@@ -164,23 +168,16 @@ pub fn addModFeatureModule(b: *std.Build, exe: *std.Build.Step.Compile, name: []
 }
 
 fn addModFeatures(b: *std.Build, exe: *std.Build.Step.Compile) !void {
-	const step = try b.allocator.create(std.Build.Step);
-	step.* = std.Build.Step.init(.{
-		.id = .custom,
-		.name = "Create Mods",
-		.owner = b,
-		.makeFn = makeModFeaturesStep,
-	});
-	exe.step.dependOn(step);
+	exe.step.dependOn(try makeModFeaturesStep(b));
 
 	try addModFeatureModule(b, exe, "rotations");
 }
 
-pub fn makeModFeaturesStep(step: *std.Build.Step, options: std.Build.Step.MakeOptions) !void {
-	var io = std.Io.Threaded.init(options.gpa, .{});
+pub fn makeModFeaturesStep(b: *std.Build) !*std.Build.Step {
+	var io = std.Io.Threaded.init(b.allocator, .{});
 	defer io.deinit();
 
-	try makeModFeature(io.io(), step, "rotations");
+	return makeModFeature(io.io(), b, "rotations");
 }
 
 fn createLaunchConfig(b: *std.Build) !void {
@@ -303,9 +300,7 @@ pub fn build(b: *std.Build) !void {
 
 	const run_cmd = b.addRunArtifact(exe);
 	run_cmd.step.dependOn(b.getInstallStep());
-	if (b.args) |args| {
-		run_cmd.addArgs(args);
-	}
+	run_cmd.addPassthruArgs();
 
 	const run_step = b.step("run", "Run the app");
 	run_step.dependOn(&run_cmd.step);

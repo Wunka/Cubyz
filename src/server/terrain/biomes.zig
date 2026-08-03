@@ -84,7 +84,7 @@ pub fn hashGeneric(input: anytype) u64 {
 		.bool => hashCombine(hashInt(@intFromBool(input)), 0xbf58476d1ce4e5b9),
 		.@"enum" => hashCombine(hashInt(@as(u64, @intFromEnum(input))), 0x94d049bb133111eb),
 		.int, .float => blk: {
-			const value = @as(std.meta.Int(.unsigned, @bitSizeOf(T)), @bitCast(input));
+			const value = @as(@Int(.unsigned, @bitSizeOf(T)), @bitCast(input));
 			break :blk hashInt(@as(u64, value));
 		},
 		.@"struct" => blk: {
@@ -92,9 +92,9 @@ pub fn hashGeneric(input: anytype) u64 {
 				break :blk input.getHash();
 			}
 			var result: u64 = hashGeneric(@typeName(T));
-			inline for (@typeInfo(T).@"struct".fields) |field| {
-				const keyHash = hashGeneric(@as([]const u8, field.name));
-				const valueHash = hashGeneric(@field(input, field.name));
+			inline for (@typeInfo(T).@"struct".field_names) |fieldName| {
+				const keyHash = hashGeneric(@as([]const u8, fieldName));
+				const valueHash = hashGeneric(@field(input, fieldName));
 				const keyValueHash = hashCombine(keyHash, valueHash);
 				result = hashCombine(result, keyValueHash);
 			}
@@ -196,9 +196,9 @@ pub const Biome = struct { // MARK: Biome
 			var result: GenerationProperties = .{};
 			for (zon.toSlice()) |child| {
 				const property = child.as([]const u8) orelse "";
-				inline for (@typeInfo(GenerationProperties).@"struct".fields) |field| {
-					if (std.mem.eql(u8, field.name, property)) {
-						@field(result, field.name) = true;
+				inline for (@typeInfo(GenerationProperties).@"struct".field_names) |fieldName| {
+					if (std.mem.eql(u8, fieldName, property)) {
+						@field(result, fieldName) = true;
 					}
 				}
 			}
@@ -397,7 +397,7 @@ pub const Biome = struct { // MARK: Biome
 	}
 
 	pub fn hasTag(self: Biome, tag: Tag) bool {
-		return std.mem.containsAtLeastScalar(Tag, self.tags, 1, tag);
+		return std.mem.containsAtLeastScalar(Tag, self.tags, tag, 1);
 	}
 };
 

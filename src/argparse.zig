@@ -69,26 +69,26 @@ pub fn Parser(comptime T: type, comptime options: Options) type {
 
 			var nextArgument: ?[]const u8 = tokens.next();
 
-			inline for (s.fields) |field| {
-				const value = resolveArgument(field.type, arena, field.name[0..], nextArgument, &tempErrorMessage);
+			inline for (s.field_names, s.field_types) |fieldName, fieldType| {
+				const value = resolveArgument(fieldType, arena, fieldName[0..], nextArgument, &tempErrorMessage);
 
 				if (value == error.ParseError) {
-					if (@typeInfo(field.type) == .optional) {
-						@field(result, field.name) = null;
+					if (@typeInfo(fieldType) == .optional) {
+						@field(result, fieldName) = null;
 						tempErrorMessage.clearRetainingCapacity();
 					} else {
 						errorMessage.appendSlice(tempErrorMessage.items);
 						return error.ParseError;
 					}
 				} else {
-					@field(result, field.name) = value catch unreachable;
+					@field(result, fieldName) = value catch unreachable;
 					tempErrorMessage.clearRetainingCapacity();
 					nextArgument = tokens.next();
 				}
 			}
 
 			if (nextArgument != null) {
-				errorMessage.print("Too many arguments for command, expected {}", .{s.fields.len});
+				errorMessage.print("Too many arguments for command, expected {}", .{s.field_names.len});
 				return error.ParseError;
 			}
 
@@ -132,7 +132,7 @@ pub fn Parser(comptime T: type, comptime options: Options) type {
 					};
 				},
 				inline .int => |intInfo| {
-					return std.fmt.parseInt(std.meta.Int(intInfo.signedness, intInfo.bits), arg, 0) catch {
+					return std.fmt.parseInt(@Int(intInfo.signedness, intInfo.bits), arg, 0) catch {
 						errorMessage.print("Expected an integer for <{s}>, found \"{s}\"", .{name, arg});
 						return error.ParseError;
 					};
@@ -153,14 +153,14 @@ pub fn Parser(comptime T: type, comptime options: Options) type {
 
 			tempErrorMessage.appendSlice("---");
 
-			inline for (u.fields) |field| {
+			inline for (u.field_names, u.field_types) |fieldName, fieldType| {
 				tempErrorMessage.append('\n');
-				tempErrorMessage.appendSlice(field.name);
+				tempErrorMessage.appendSlice(fieldName);
 				tempErrorMessage.append('\n');
 
-				const result = Parser(field.type, options).resolve(.parse, arena, args, &tempErrorMessage);
+				const result = Parser(fieldType, options).resolve(.parse, arena, args, &tempErrorMessage);
 				if (result != error.ParseError) {
-					return @unionInit(T, field.name, result catch unreachable);
+					return @unionInit(T, fieldName, result catch unreachable);
 				}
 				tempErrorMessage.appendSlice("\n---");
 			}

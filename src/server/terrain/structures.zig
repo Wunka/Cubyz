@@ -57,10 +57,10 @@ pub const SimpleStructureModel = struct { // MARK: SimpleStructureModel
 	}
 
 	const modelRegistry: std.StaticStringMap(VTable) = .initComptime(blk: {
-		const decls = @typeInfo(simple_structures).@"struct".decls;
-		var generators: [decls.len]struct { []const u8, VTable } = undefined;
-		for (0..decls.len) |i| {
-			const Generator = @field(simple_structures, decls[i].name);
+		const declNames = @typeInfo(simple_structures).@"struct".decl_names;
+		var generators: [declNames.len]struct { []const u8, VTable } = undefined;
+		for (0..declNames.len) |i| {
+			const Generator = @field(simple_structures, declNames[i]);
 			generators[i] = .{Generator.id, .{
 				.loadModel = main.meta.castFunctionReturnToOptionalAnyopaque(Generator.loadModel),
 				.generate = main.meta.castFunctionSelfToAnyopaque(Generator.generate),
