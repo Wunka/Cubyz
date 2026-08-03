@@ -15,8 +15,6 @@ const HorizontalList = GuiComponent.HorizontalList;
 const VerticalList = GuiComponent.VerticalList;
 const ItemSlot = GuiComponent.ItemSlot;
 
-const CISLot = GuiComponent.CISlot;
-
 pub var window = GuiWindow{
 	.relativePosition = .{
 		.{.attachedToFrame = .{.selfAttachmentPoint = .lower, .otherAttachmentPoint = .lower}},
@@ -109,9 +107,9 @@ fn initContent() void {
 			const row = HorizontalList.init();
 			for (0..slotsPerRow) |_| {
 				if (i >= items.items.len) {
-					row.add(CISLot.init(ItemSlot.init(.{0, 0}, inventory, i, .immutable, .immutable)));
+					row.add(ItemSlot.init(.{0, 0}, inventory, i, .immutable, .immutable));
 				} else {
-					row.add(CISLot.init(ItemSlot.init(.{0, 0}, inventory, i, .default, .takeOnly)));
+					row.add(ItemSlot.init(.{0, 0}, inventory, i, .default, .takeOnly));
 				}
 				i += 1;
 			}

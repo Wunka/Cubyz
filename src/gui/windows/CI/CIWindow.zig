@@ -18,7 +18,6 @@ const HorizontalList = GuiComponent.HorizontalList;
 const VerticalList = GuiComponent.VerticalList;
 const Icon = GuiComponent.Icon;
 const ItemSlot = GuiComponent.ItemSlot;
-const CISlot = GuiComponent.CISlot;
 
 const inventory = @import("../inventory.zig");
 
@@ -134,7 +133,7 @@ fn findAvailableRecipes(list: *VerticalList) bool {
 			if (col < remainder) itemsThisColumn += 1;
 			const columnList = VerticalList.init(.{0, 0}, std.math.inf(f32), 0);
 			for (0..itemsThisColumn) |_| {
-				columnList.add(CISlot.init(ItemSlot.init(.{0, 0}, inv, i, .immutable, .immutable)));
+				columnList.add(ItemSlot.init(.{0, 0}, inv, i, .immutable, .immutable));
 				i += 1;
 			}
 			columnList.finish(.center);
