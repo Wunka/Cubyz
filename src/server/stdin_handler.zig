@@ -5,7 +5,7 @@ const main = @import("main");
 
 var readBuffer: [100_000]u8 = undefined;
 
-var running: bool = true;
+var running: bool = false;
 
 pub fn update() void {
 	if (!running) return;

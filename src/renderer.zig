@@ -1141,7 +1141,7 @@ pub const MeshSelection = struct { // MARK: MeshSelection
 		mesh_storage.updateBlock(.{.pos = pos, .newBlock = newBlock, .blockEntityData = &.{}});
 	}
 
-	pub fn drawCube(relativePositionToPlayer: Vec3d, min: Vec3f, max: Vec3f) void {
+	pub fn drawCube(relativePositionToPlayer: [3]f64, min: [3]f32, max: [3]f32) void {
 		pipeline.bind(null);
 
 		c.glUniform3f(
@@ -1167,7 +1167,7 @@ pub const MeshSelection = struct { // MARK: MeshSelection
 			if (game.Player.selectionPosition2) |pos2| {
 				const bottomLeft: Vec3i = @min(pos1, pos2);
 				const topRight: Vec3i = @max(pos1, pos2);
-				drawCube(@as(Vec3d, @floatFromInt(bottomLeft)) - playerPos, .{0, 0, 0}, @floatFromInt(topRight - bottomLeft + Vec3i{1, 1, 1}));
+				drawCube(@as(Vec3d, @floatFromInt(bottomLeft)) - playerPos, .{0, 0, 0}, @as(Vec3f,@floatFromInt(topRight - bottomLeft + Vec3i{1, 1, 1})));
 			}
 		}
 	}

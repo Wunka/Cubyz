@@ -176,7 +176,7 @@ pub const draw = struct { // MARK: draw
 		rectVao.deinit();
 	}
 
-	pub fn rect(_pos: Vec2f, _dim: Vec2f) void {
+	pub fn rect(_pos: [2]f32, _dim: [2]f32) void {
 		var pos = _pos;
 		var dim = _dim;
 		pos *= @splat(scale);
@@ -1992,7 +1992,7 @@ pub const Texture = struct { // MARK: Texture
 
 	pub fn size(self: Texture) Vec2i {
 		self.bind();
-		var result: Vec2i = undefined;
+		var result: [2]i32 = undefined;
 		c.glGetTexLevelParameteriv(c.GL_TEXTURE_2D, 0, c.GL_TEXTURE_WIDTH, &result[0]);
 		c.glGetTexLevelParameteriv(c.GL_TEXTURE_2D, 0, c.GL_TEXTURE_HEIGHT, &result[1]);
 		return result;
@@ -2040,7 +2040,7 @@ pub const CubeMapTexture = struct { // MARK: CubeMapTexture
 		c.glTexParameteri(c.GL_TEXTURE_CUBE_MAP, c.GL_TEXTURE_MAX_LEVEL, 0);
 	}
 
-	pub fn faceNormal(face: usize) Vec3f {
+	pub fn faceNormal(face: usize) [3]f32 {
 		const normals = [_]Vec3f{
 			.{1, 0, 0}, // +x
 			.{-1, 0, 0}, // -x
@@ -2052,7 +2052,20 @@ pub const CubeMapTexture = struct { // MARK: CubeMapTexture
 		return normals[face];
 	}
 
-	pub fn faceUp(face: usize) Vec3f {
+	pub fn faceNormalVec(face: usize) Vec3f {
+		const normals = [_]Vec3f{
+			.{1, 0, 0}, // +x
+			.{-1, 0, 0}, // -x
+			.{0, 1, 0}, // +y
+			.{0, -1, 0}, // -y
+			.{0, 0, 1}, // +z
+			.{0, 0, -1}, // -z
+		};
+		return normals[face];
+	}
+        
+
+	pub fn faceUp(face: usize) [3]f32 {
 		const ups = [_]Vec3f{
 			.{0, -1, 0}, // +x
 			.{0, -1, 0}, // -x
@@ -2064,10 +2077,10 @@ pub const CubeMapTexture = struct { // MARK: CubeMapTexture
 		return ups[face];
 	}
 
-	pub fn faceRight(face: usize) Vec3f {
+	pub fn faceRight(face: usize) [3]f32 {
 		comptime var rights: [6]Vec3f = undefined;
 		inline for (0..6) |i| {
-			rights[i] = comptime vec.cross(faceNormal(i), faceUp(i));
+			rights[i] = comptime vec.cross(faceNormalVec(i), faceUp(i));
 		}
 		return rights[face];
 	}
@@ -2252,8 +2265,8 @@ pub const frame_uniforms = struct { // MARK: frame_uniforms
 };
 
 pub const Fog = struct { // MARK: Fog
-	fogColor: Vec3f,
-	skyColor: Vec3f,
+	fogColor: [3]f32,
+	skyColor: [3]f32,
 	density: f32,
 	fogLower: f32,
 	fogHigher: f32,

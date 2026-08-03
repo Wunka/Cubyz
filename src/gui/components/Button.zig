@@ -159,7 +159,6 @@ pub fn render(self: *Button, mousePosition: Vec2f) void {
 		self.hovered = false;
 		draw.customShadedRect(buttonUniforms, self.pos + Vec2f{2, 2}, self.size - Vec2f{4, 4});
 	}
-
 	const cornerSize = (textures.outlineTextureSize - Vec2f{1, 1})/Vec2f{2, 2};
 
 	textures.outlineTexture.bindTo(0);
