@@ -119,9 +119,12 @@ fn initReflectionCubeMap() void {
 	c.glUniform1f(fakeReflectionUniforms.frequency, 1);
 	c.glUniform1f(fakeReflectionUniforms.reflectionMapSize, reflectionCubeMapSize);
 	for (0..6) |face| {
-		c.glUniform3fv(fakeReflectionUniforms.normalVector, 1, @ptrCast(&graphics.CubeMapTexture.faceNormal(face)));
-		c.glUniform3fv(fakeReflectionUniforms.upVector, 1, @ptrCast(&graphics.CubeMapTexture.faceUp(face)));
-		c.glUniform3fv(fakeReflectionUniforms.rightVector, 1, @ptrCast(&graphics.CubeMapTexture.faceRight(face)));
+		const normal = graphics.CubeMapTexture.faceNormal(face);
+		const up = graphics.CubeMapTexture.faceUp(face);
+		const right = graphics.CubeMapTexture.faceRight(face);
+		c.glUniform3f(fakeReflectionUniforms.normalVector, normal[0], normal[1], normal[2]);
+		c.glUniform3f(fakeReflectionUniforms.upVector, up[0], up[1], up[2]);
+		c.glUniform3f(fakeReflectionUniforms.rightVector, right[0], right[1], right[2]);
 		reflectionCubeMap.bindToFramebuffer(framebuffer, @intCast(face));
 		graphics.draw.rectVao.bind();
 		c.glDrawArrays(c.GL_TRIANGLE_STRIP, 0, 4);
@@ -306,7 +309,8 @@ pub fn renderWorld(world: *World, ambientLight: Vec3f, skyColor: Vec3f, playerPo
 	worldFrameBuffer.unbind();
 	deferredRenderPassPipeline.bind(null);
 	if (!blocks.meshes.hasFog(playerBlock)) {
-		c.glUniform3fv(deferredUniforms.@"fog.color", 1, @ptrCast(&game.world.?.dayTime.fog.fogColor));
+		const fogColor = game.world.?.dayTime.fog.fogColor;
+		c.glUniform3f(deferredUniforms.@"fog.color", fogColor[0], fogColor[1], fogColor[2]);
 		c.glUniform1f(deferredUniforms.@"fog.density", game.world.?.dayTime.fog.density);
 		c.glUniform1f(deferredUniforms.@"fog.fogLower", game.world.?.dayTime.fog.fogLower);
 		c.glUniform1f(deferredUniforms.@"fog.fogHigher", game.world.?.dayTime.fog.fogHigher);
@@ -317,7 +321,8 @@ pub fn renderWorld(world: *World, ambientLight: Vec3f, skyColor: Vec3f, playerPo
 		c.glUniform1f(deferredUniforms.@"fog.fogLower", 1e10);
 		c.glUniform1f(deferredUniforms.@"fog.fogHigher", 1e10);
 	}
-	c.glUniformMatrix4fv(deferredUniforms.invViewMatrix, 1, c.GL_TRUE, @ptrCast(&game.camera.viewMatrix.transpose()));
+	const invViewMatrixGl = game.camera.viewMatrix.transpose().toGl();
+	c.glUniformMatrix4fv(deferredUniforms.invViewMatrix, 1, c.GL_FALSE, @ptrCast(&invViewMatrixGl));
 	c.glUniform1f(deferredUniforms.zNear, zNear);
 	c.glUniform1f(deferredUniforms.zFar, zFar);
 	c.glUniform2f(deferredUniforms.tanXY, 1.0/game.projectionMatrix.rows[0][0], 1.0/game.projectionMatrix.rows[1][2]);
@@ -407,7 +412,8 @@ const Bloom = struct { // MARK: Bloom
 		worldFrameBuffer.bindDepthTexture(c.GL_TEXTURE4);
 		buffer1.bind();
 		if (!blocks.meshes.hasFog(playerBlock)) {
-			c.glUniform3fv(colorExtractUniforms.@"fog.color", 1, @ptrCast(&game.world.?.dayTime.fog.fogColor));
+			const fogColor = game.world.?.dayTime.fog.fogColor;
+			c.glUniform3f(colorExtractUniforms.@"fog.color", fogColor[0], fogColor[1], fogColor[2]);
 			c.glUniform1f(colorExtractUniforms.@"fog.density", game.world.?.dayTime.fog.density);
 			c.glUniform1f(colorExtractUniforms.@"fog.fogLower", game.world.?.dayTime.fog.fogLower);
 			c.glUniform1f(colorExtractUniforms.@"fog.fogHigher", game.world.?.dayTime.fog.fogHigher);
@@ -419,7 +425,8 @@ const Bloom = struct { // MARK: Bloom
 			c.glUniform1f(colorExtractUniforms.@"fog.fogHigher", 1e10);
 		}
 
-		c.glUniformMatrix4fv(colorExtractUniforms.invViewMatrix, 1, c.GL_TRUE, @ptrCast(&viewMatrix.transpose()));
+		const invViewMatrixGl = viewMatrix.transpose().toGl();
+		c.glUniformMatrix4fv(colorExtractUniforms.invViewMatrix, 1, c.GL_FALSE, @ptrCast(&invViewMatrixGl));
 		c.glUniform1f(colorExtractUniforms.zNear, zNear);
 		c.glUniform1f(colorExtractUniforms.zFar, zFar);
 		c.glUniform2f(colorExtractUniforms.tanXY, 1.0/game.projectionMatrix.rows[0][0], 1.0/game.projectionMatrix.rows[1][2]);
@@ -820,7 +827,8 @@ pub const Skybox = struct {
 			starSsbo.bind(12);
 
 			c.glUniform1f(starUniforms.starOpacity, starOpacity);
-			c.glUniformMatrix4fv(starUniforms.mvp, 1, c.GL_TRUE, @ptrCast(&starMatrix));
+			const starMatrixGl = starMatrix.toGl();
+			c.glUniformMatrix4fv(starUniforms.mvp, 1, c.GL_FALSE, @ptrCast(&starMatrixGl));
 
 			starVao.bind();
 			c.glDrawArrays(c.GL_TRIANGLES, 0, numStars*3);
@@ -1141,7 +1149,7 @@ pub const MeshSelection = struct { // MARK: MeshSelection
 		mesh_storage.updateBlock(.{.pos = pos, .newBlock = newBlock, .blockEntityData = &.{}});
 	}
 
-	pub fn drawCube(relativePositionToPlayer: [3]f64, min: [3]f32, max: [3]f32) void {
+	pub fn drawCube(relativePositionToPlayer: Vec3d, min: Vec3f, max: Vec3f) void {
 		pipeline.bind(null);
 
 		c.glUniform3f(
@@ -1167,7 +1175,7 @@ pub const MeshSelection = struct { // MARK: MeshSelection
 			if (game.Player.selectionPosition2) |pos2| {
 				const bottomLeft: Vec3i = @min(pos1, pos2);
 				const topRight: Vec3i = @max(pos1, pos2);
-				drawCube(@as(Vec3d, @floatFromInt(bottomLeft)) - playerPos, .{0, 0, 0}, @as(Vec3f,@floatFromInt(topRight - bottomLeft + Vec3i{1, 1, 1})));
+				drawCube(@as(Vec3d, @floatFromInt(bottomLeft)) - playerPos, .{0, 0, 0}, @floatFromInt(topRight - bottomLeft + Vec3i{1, 1, 1}));
 			}
 		}
 	}

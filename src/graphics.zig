@@ -176,7 +176,7 @@ pub const draw = struct { // MARK: draw
 		rectVao.deinit();
 	}
 
-	pub fn rect(_pos: [2]f32, _dim: [2]f32) void {
+	pub fn rect(_pos: Vec2f, _dim: Vec2f) void {
 		var pos = _pos;
 		var dim = _dim;
 		pos *= @splat(scale);
@@ -2040,7 +2040,7 @@ pub const CubeMapTexture = struct { // MARK: CubeMapTexture
 		c.glTexParameteri(c.GL_TEXTURE_CUBE_MAP, c.GL_TEXTURE_MAX_LEVEL, 0);
 	}
 
-	pub fn faceNormal(face: usize) [3]f32 {
+	pub fn faceNormal(face: usize) Vec3f {
 		const normals = [_]Vec3f{
 			.{1, 0, 0}, // +x
 			.{-1, 0, 0}, // -x
@@ -2052,20 +2052,7 @@ pub const CubeMapTexture = struct { // MARK: CubeMapTexture
 		return normals[face];
 	}
 
-	pub fn faceNormalVec(face: usize) Vec3f {
-		const normals = [_]Vec3f{
-			.{1, 0, 0}, // +x
-			.{-1, 0, 0}, // -x
-			.{0, 1, 0}, // +y
-			.{0, -1, 0}, // -y
-			.{0, 0, 1}, // +z
-			.{0, 0, -1}, // -z
-		};
-		return normals[face];
-	}
-        
-
-	pub fn faceUp(face: usize) [3]f32 {
+	pub fn faceUp(face: usize) Vec3f {
 		const ups = [_]Vec3f{
 			.{0, -1, 0}, // +x
 			.{0, -1, 0}, // -x
@@ -2077,10 +2064,10 @@ pub const CubeMapTexture = struct { // MARK: CubeMapTexture
 		return ups[face];
 	}
 
-	pub fn faceRight(face: usize) [3]f32 {
+	pub fn faceRight(face: usize) Vec3f {
 		comptime var rights: [6]Vec3f = undefined;
 		inline for (0..6) |i| {
-			rights[i] = comptime vec.cross(faceNormalVec(i), faceUp(i));
+			rights[i] = comptime vec.cross(faceNormal(i), faceUp(i));
 		}
 		return rights[face];
 	}
@@ -2265,8 +2252,8 @@ pub const frame_uniforms = struct { // MARK: frame_uniforms
 };
 
 pub const Fog = struct { // MARK: Fog
-	fogColor: [3]f32,
-	skyColor: [3]f32,
+	fogColor: Vec3f,
+	skyColor: Vec3f,
 	density: f32,
 	fogLower: f32,
 	fogHigher: f32,
@@ -2379,7 +2366,7 @@ pub fn generateBlockTexture(blockType: u16) Texture {
 	{
 		var chunkAllocation: SubAllocation = .{.start = 0, .len = 0};
 		main.renderer.chunk_meshing.chunkBuffer.uploadData(&.{.{
-			.position = .{0, 0, 0},
+			.position = .{0, 0, 0, 0},
 			.min = undefined,
 			.max = undefined,
 			.voxelSize = 1,

@@ -336,12 +336,14 @@ pub const ParticleSystem = struct {
 		pipeline.bind(null);
 
 		const projectionAndViewMatrix = Mat4f.mul(projectionMatrix, viewMatrix.mul(.translation(@floatCast(-game.Player.getEyePosBlocking() + @as(Vec3d, @floatFromInt(previousPlayerPos))))));
-		c.glUniformMatrix4fv(uniforms.projectionAndViewMatrix, 1, c.GL_TRUE, @ptrCast(&projectionAndViewMatrix));
-		c.glUniform3fv(uniforms.ambientLight, 1, @ptrCast(&ambientLight));
+		const projectionAndViewMatrixGl = projectionAndViewMatrix.toGl();
+		c.glUniformMatrix4fv(uniforms.projectionAndViewMatrix, 1, c.GL_FALSE, @ptrCast(&projectionAndViewMatrixGl));
+		c.glUniform3f(uniforms.ambientLight, ambientLight[0], ambientLight[1], ambientLight[2]);
 
 		const billboardMatrix = Mat4f.rotationZ(-game.camera.rotation[2] + std.math.pi*0.5)
 			.mul(Mat4f.rotationY(game.camera.rotation[0] - std.math.pi*0.5));
-		c.glUniformMatrix4fv(uniforms.billboardMatrix, 1, c.GL_TRUE, @ptrCast(&billboardMatrix));
+		const billboardMatrixGl = billboardMatrix.toGl();
+		c.glUniformMatrix4fv(uniforms.billboardMatrix, 1, c.GL_FALSE, @ptrCast(&billboardMatrixGl));
 
 		c.glActiveTexture(c.GL_TEXTURE0);
 		ParticleManager.textureArray.bind();
