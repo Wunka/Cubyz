@@ -286,10 +286,10 @@ pub const FaceData = extern struct {
 };
 
 pub const ChunkData = extern struct {
-	position: [4]i32 align(16),
-	min: [4]f32 align(16),
-	max: [4]f32 align(16),
-	voxelSize: i32,
+	position: [3]i32 align(16),
+	min: [3]f32 align(16),
+	max: [3]f32 align(16),
+	voxelSize: i32 align(16),
 	lightStart: u32,
 	vertexStartOpaque: u32,
 	faceCountsByNormalOpaque: [14]u32,
@@ -1421,15 +1421,15 @@ pub const ChunkMesh = struct { // MARK: ChunkMesh
 
 	fn uploadChunkPosition(self: *ChunkMesh) void {
 		chunkBuffer.uploadData(&.{ChunkData{
-			.position = .{self.pos.wx, self.pos.wy, self.pos.wz, 0},
+			.position = .{self.pos.wx, self.pos.wy, self.pos.wz},
 			.voxelSize = self.pos.voxelSize,
 			.lightStart = self.lightAllocation.start,
 			.vertexStartOpaque = self.opaqueMesh.bufferAllocation.start*4,
 			.faceCountsByNormalOpaque = self.opaqueMesh.byNormalCount,
 			.vertexStartTransparent = self.transparentMesh.bufferAllocation.start*4,
 			.vertexCountTransparent = self.transparentMesh.bufferAllocation.len*6,
-			.min = .{self.min[0], self.min[1], self.min[2], 0},
-			.max = .{self.max[0], self.max[1], self.max[2], 0},
+			.min = .{self.min[0], self.min[1], self.min[2]},
+			.max = .{self.max[0], self.max[1], self.max[2]},
 			.visibilityState = 0,
 			.oldVisibilityState = 0,
 		}}, &self.chunkAllocation);

@@ -2366,7 +2366,7 @@ pub fn generateBlockTexture(blockType: u16) Texture {
 	{
 		var chunkAllocation: SubAllocation = .{.start = 0, .len = 0};
 		main.renderer.chunk_meshing.chunkBuffer.uploadData(&.{.{
-			.position = .{0, 0, 0, 0},
+			.position = .{0, 0, 0},
 			.min = undefined,
 			.max = undefined,
 			.voxelSize = 1,
