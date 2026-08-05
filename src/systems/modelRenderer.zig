@@ -143,7 +143,7 @@ pub const client = struct {
 
 		pipeline.bind(null);
 
-		c.glUniform3f(uniforms.ambientLight, ambientLight[0], ambientLight[1], ambientLight[2]);
+		c.glUniform3fv(uniforms.ambientLight, 1, @ptrCast(&ambientLight));
 		c.glUniform1f(uniforms.contrast, 0.12);
 
 		main.systems.systems.modelRenderer.client.nodeBuffer.beginRender();
@@ -179,8 +179,7 @@ pub const client = struct {
 				}))
 				.mul(Mat4f.rotationZ(-ent.rot[2])));
 			const modelViewMatrix = game.camera.viewMatrix.mul(modelMatrix);
-			const modelViewMatrixGl = modelViewMatrix.toGl();
-			c.glUniformMatrix4fv(uniforms.modelViewMatrix, 1, c.GL_FALSE, @ptrCast(&modelViewMatrixGl));
+			c.glUniformMatrix4fv(uniforms.modelViewMatrix, 1, c.GL_TRUE, @ptrCast(&modelViewMatrix));
 			c.glDrawElements(c.GL_TRIANGLES, entModel.indexCount, c.GL_UNSIGNED_INT, null);
 		}
 

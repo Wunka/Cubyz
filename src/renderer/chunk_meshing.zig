@@ -191,8 +191,7 @@ pub fn bindShaderAndUniforms(ambient: Vec3f) void {
 pub fn bindTransparentShaderAndUniforms(ambient: Vec3f) void {
 	transparentPipeline.bind(null);
 
-	const fogColor = game.world.?.dayTime.fog.fogColor;
-	c.glUniform3f(transparentUniforms.@"fog.color", fogColor[0], fogColor[1], fogColor[2]);
+	c.glUniform3fv(transparentUniforms.@"fog.color", 1, @ptrCast(&game.world.?.dayTime.fog.fogColor));
 	c.glUniform1f(transparentUniforms.@"fog.density", game.world.?.dayTime.fog.density);
 	c.glUniform1f(transparentUniforms.@"fog.fogLower", game.world.?.dayTime.fog.fogLower);
 	c.glUniform1f(transparentUniforms.@"fog.fogHigher", game.world.?.dayTime.fog.fogHigher);
@@ -1428,8 +1427,8 @@ pub const ChunkMesh = struct { // MARK: ChunkMesh
 			.faceCountsByNormalOpaque = self.opaqueMesh.byNormalCount,
 			.vertexStartTransparent = self.transparentMesh.bufferAllocation.start*4,
 			.vertexCountTransparent = self.transparentMesh.bufferAllocation.len*6,
-			.min = .{self.min[0], self.min[1], self.min[2]},
-			.max = .{self.max[0], self.max[1], self.max[2]},
+			.min = self.min,
+			.max = self.max,
 			.visibilityState = 0,
 			.oldVisibilityState = 0,
 		}}, &self.chunkAllocation);

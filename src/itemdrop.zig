@@ -649,7 +649,7 @@ pub const ItemDropRenderer = struct { // MARK: ItemDropRenderer
 	fn bindCommonUniforms(ambientLight: Vec3f) void {
 		itemPipeline.bind(null);
 		c.glUniform1f(itemUniforms.reflectionMapSize, main.renderer.reflectionCubeMapSize);
-		c.glUniform3f(itemUniforms.ambientLight, ambientLight[0], ambientLight[1], ambientLight[2]);
+		c.glUniform3fv(itemUniforms.ambientLight, 1, @ptrCast(&ambientLight));
 		c.glUniform1f(itemUniforms.contrast, 0.12);
 		var depthRange: [2]f32 = undefined;
 		c.glGetFloatv(c.GL_DEPTH_RANGE, &depthRange);
@@ -659,8 +659,7 @@ pub const ItemDropRenderer = struct { // MARK: ItemDropRenderer
 	fn bindLightUniform(light: [6]u8, ambientLight: Vec3f) void {
 		const sunLight: Vec3f = ambientLight*@as(Vec3f, @floatFromInt(Vec3i{light[0], light[1], light[2]}))/@as(Vec3f, @splat(255));
 		const blockLight: Vec3f = @as(Vec3f, @floatFromInt(Vec3i{light[3], light[4], light[5]}))/@as(Vec3f, @splat(255));
-		const combinedLight = @min(@sqrt(sunLight*sunLight + blockLight*blockLight), @as(Vec3f, @splat(1)));
-		c.glUniform3f(itemUniforms.ambientLight, combinedLight[0], combinedLight[1], combinedLight[2]);
+		c.glUniform3fv(itemUniforms.ambientLight, 1, @ptrCast(&@min(@sqrt(sunLight*sunLight + blockLight*blockLight), @as(Vec3f, @splat(1)))));
 	}
 
 	fn bindModelUniforms(modelIndex: u31, blockType: u16) void {
@@ -669,8 +668,7 @@ pub const ItemDropRenderer = struct { // MARK: ItemDropRenderer
 	}
 
 	fn drawItem(vertices: u31, modelMatrix: Mat4f) void {
-		const modelMatrixGl = modelMatrix.toGl();
-		c.glUniformMatrix4fv(itemUniforms.modelMatrix, 1, c.GL_FALSE, @ptrCast(&modelMatrixGl));
+		c.glUniformMatrix4fv(itemUniforms.modelMatrix, 1, c.GL_TRUE, @ptrCast(&modelMatrix));
 		main.renderer.chunk_meshing.vao.bind();
 		c.glDrawElements(c.GL_TRIANGLES, vertices, c.GL_UNSIGNED_INT, null);
 	}
