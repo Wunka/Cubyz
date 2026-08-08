@@ -2,7 +2,7 @@
 	.name = .Cubyzig,
 	.fingerprint = 0x782a2e402c0ee887,
 	.version = "0.0.0",
-	.minimum_zig_version = "0.17.0-dev.1564+97ced1272",
+	.minimum_zig_version = "0.17.0-dev.1609+11e2bb391",
 	.paths = .{""},
 	.dependencies = .{
 		.local = .{
