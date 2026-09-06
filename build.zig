@@ -13,7 +13,7 @@ fn linkLibraries(b: *std.Build, exe: *std.Build.Step.Compile, useLocalDeps: bool
 	const optimize = exe.root_module.optimize.?;
 
 	const depsLib = b.fmt("cubyz_deps_{s}-{s}-{s}", .{@tagName(t.cpu.arch), @tagName(t.os.tag), switch (t.os.tag) {
-		.linux => "musl",
+		.linux => "gnu",
 		.macos => "none",
 		.windows => "gnu",
 		else => "none",
