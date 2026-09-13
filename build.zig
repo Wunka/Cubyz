@@ -152,6 +152,16 @@ pub fn makeModFeature(io: std.Io, b: *std.Build, name: []const u8) !*std.Build.S
 		try featureList.append(step.owner.allocator, '\n');
 	}
 
+	const testTextSpaces =
+		\\
+		\\const main = @import("main");
+		\\test "abc" {
+		\\    @setEvalBranchQuota(1000000);
+		\\    main.refAllDeclsRecursiveExceptCImports(@This());
+		\\}
+	;
+	try featureList.appendSlice(step.owner.allocator, try std.mem.replaceOwned(u8, step.owner.allocator, testTextSpaces, "    ", "\t"));
+
 	const file_path = step.owner.fmt("mods/{s}.zig", .{name});
 	update.addBytesToSource(featureList.items, file_path);
 	return step;
@@ -163,6 +173,15 @@ pub fn addModFeatureModule(b: *std.Build, exe: *std.Build.Step.Compile, name: []
 		.target = exe.root_module.resolved_target,
 		.optimize = exe.root_module.optimize,
 	});
+
+	if (exe.kind == .@"test") {
+		const exe_tests = b.addTest(.{
+			.root_module = module,
+			.test_runner = exe.test_runner,
+		});
+		const run_exe_tests = b.addRunArtifact(exe_tests);
+		exe.step.dependOn(&run_exe_tests.step);
+	}
 	module.addImport("main", exe.root_module);
 	exe.root_module.addImport(name, module);
 }
