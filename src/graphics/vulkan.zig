@@ -1103,9 +1103,9 @@ pub const gpu_allocator = struct {
 				};
 			}
 			break :blk .{
-				.vkGetInstanceProcAddr = c.pfn_vkGetInstanceProcAddr,
-				.vkGetDeviceProcAddr = c.pfn_vkGetDeviceProcAddr,
-				.vkCreateImage = c.pfn_vkCreateImage,
+				.vkGetInstanceProcAddr = c.vkGetInstanceProcAddr,
+				.vkGetDeviceProcAddr = c.vkGetDeviceProcAddr,
+				.vkCreateImage = c.vkCreateImage,
 			};
 		};
 		const allocatorCreateInfo: c.VmaAllocatorCreateInfo = .{
