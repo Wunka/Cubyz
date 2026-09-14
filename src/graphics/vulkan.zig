@@ -1094,10 +1094,19 @@ pub const gpu_allocator = struct {
 	var handle: c.VmaAllocator = undefined;
 
 	fn init() void {
-		const vkFunctions: c.VmaVulkanFunctions = .{
-			.glad_vkGetInstanceProcAddr = c.glad_vkGetInstanceProcAddr,
-			.glad_vkGetDeviceProcAddr = c.glad_vkGetDeviceProcAddr,
-			.glad_vkCreateImage = c.glad_vkCreateImage,
+		const vkFunctions: c.VmaVulkanFunctions = blk: {
+			if (builtin.os.tag != .macos) {
+				break :blk .{
+					.glad_vkGetInstanceProcAddr = c.glad_vkGetInstanceProcAddr,
+					.glad_vkGetDeviceProcAddr = c.glad_vkGetDeviceProcAddr,
+					.glad_vkCreateImage = c.glad_vkCreateImage,
+				};
+			}
+			break :blk .{
+				.vkGetInstanceProcAddr = c.pfn_vkGetInstanceProcAddr,
+				.vkGetDeviceProcAddr = c.pfn_vkGetDeviceProcAddr,
+				.vkCreateImage = c.pfn_vkCreateImage,
+			};
 		};
 		const allocatorCreateInfo: c.VmaAllocatorCreateInfo = .{
 			.flags = 0,

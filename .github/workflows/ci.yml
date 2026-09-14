@@ -4,7 +4,7 @@ name: Compilation and Format Check
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" , "macos" ]
   pull_request:
     branches: [ "master" ]
 
@@ -39,7 +39,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     name: Build & Test (${{ matrix.os }})
     defaults:
