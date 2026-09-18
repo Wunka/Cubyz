@@ -4,7 +4,7 @@ name: Compilation and Format Check
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" , "macos_CI" ]
   pull_request:
     branches: [ "master" ]
 
