@@ -161,7 +161,7 @@ pub var interestingExtensions: struct {
 	VK_EXT_mutable_descriptor_type: bool = false, // also for bindless
 } = .{};
 
-pub var vkCmdPushDescriptorSetKHR: ?c.PFN_vkCmdPushDescriptorSetKHR = null;
+pub var vkCmdPushDescriptorSetKHR: c.PFN_vkCmdPushDescriptorSetKHR = null;
 
 pub fn loadFn() void {
 	vkCmdPushDescriptorSetKHR = c.vkGetInstanceProcAddr(instance, "vkCmdPushDescriptorSetKHR") orelse @panic("function not found");
