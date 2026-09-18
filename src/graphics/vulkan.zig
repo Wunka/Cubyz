@@ -161,6 +161,12 @@ pub var interestingExtensions: struct {
 	VK_EXT_mutable_descriptor_type: bool = false, // also for bindless
 } = .{};
 
+pub var vkCmdPushDescriptorSetKHR: ?c.PFN_vkCmdPushDescriptorSetKHR = null;
+
+pub fn loadFn() void {
+	vkCmdPushDescriptorSetKHR = c.vkGetInstanceProcAddr(instance, "vkCmdPushDescriptorSetKHR") orelse @panic("function not found");
+}
+
 // MARK: init
 
 pub fn init(window: ?*c.GLFWwindow) !void {
@@ -184,6 +190,7 @@ pub fn init(window: ?*c.GLFWwindow) !void {
 			@panic("GLAD failed to load Vulkan functions");
 		}
 	}
+	loadFn();
 	command_pool.init();
 	SwapChain.init();
 	gpu_allocator.init();
