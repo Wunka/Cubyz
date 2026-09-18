@@ -164,7 +164,7 @@ pub var interestingExtensions: struct {
 pub var vkCmdPushDescriptorSetKHR: c.PFN_vkCmdPushDescriptorSetKHR = null;
 
 pub fn loadFn() void {
-	vkCmdPushDescriptorSetKHR = c.vkGetInstanceProcAddr(instance, "vkCmdPushDescriptorSetKHR") orelse @panic("function not found");
+	vkCmdPushDescriptorSetKHR = @ptrCast(c.vkGetDeviceProcAddr(device, "vkCmdPushDescriptorSetKHR") orelse @panic("function not found"));
 }
 
 // MARK: init
