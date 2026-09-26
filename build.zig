@@ -88,6 +88,7 @@ fn linkLibraries(b: *std.Build, exe: *std.Build.Step.Compile, useLocalDeps: bool
 }
 
 pub fn makeModFeature(io: std.Io, b: *std.Build, name: []const u8) !*std.Build.Step {
+	b.dependOnDirectoryMetadata(b.graph.cwdRelativePath("mods"));
 	const update = b.addUpdateSourceFiles();
 	const step = &update.step;
 	var featureList: std.ArrayListUnmanaged(u8) = .empty;
