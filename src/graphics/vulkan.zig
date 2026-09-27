@@ -199,6 +199,14 @@ pub fn deinit() void {
 	c.vkDestroyInstance(instance, null);
 }
 
+pub fn resizeWindow() void {
+	if (frameIndex == 0) return;
+	_ = c.vkDeviceWaitIdle(device);
+	SwapChain.deinit();
+	SwapChain.init();
+	SwapChain.beginRender();
+}
+
 // MARK: Instance
 
 const validationLayers: []const [*:0]const u8 = &.{

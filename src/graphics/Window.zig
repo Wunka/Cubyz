@@ -545,6 +545,10 @@ pub const GLFWCallbacks = struct { // MARK: GLFWCallbacks
 		width = @intCast(newWidth);
 		height = @intCast(newHeight);
 		main.renderer.updateViewport(width, height);
+		if (settings.launchConfig.vulkanTestingMode) {
+			c.glfwSetWindowSize(vulkanWindow, width, height);
+			main.graphics.vulkan.resizeWindow();
+		}
 		main.gui.updateGuiScale();
 		main.gui.updateWindowPositions();
 	}
