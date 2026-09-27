@@ -204,6 +204,7 @@ pub fn resizeWindow() void {
 	_ = c.vkDeviceWaitIdle(device);
 	SwapChain.deinit();
 	SwapChain.init();
+	// it tries to endRender, when we just discarded the entire render
 	SwapChain.beginRender();
 }
 
