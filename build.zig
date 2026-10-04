@@ -170,7 +170,7 @@ pub fn makeModFeature(io: std.Io, b: *std.Build, name: []const u8) !*std.Build.S
 
 pub fn addModFeatureModule(b: *std.Build, exe: *std.Build.Step.Compile, name: []const u8) !void {
 	const module = b.createModule(.{
-		.root_source_file = b.path(b.fmt("mods/{s}.zig", .{name})),
+		.root_source_file = try modsFolder.join(b.allocator, b.fmt("{s}.zig", .{name})),
 		.target = exe.root_module.resolved_target,
 		.optimize = exe.root_module.optimize,
 	});
@@ -184,20 +184,23 @@ pub fn addModFeatureModule(b: *std.Build, exe: *std.Build.Step.Compile, name: []
 		exe.step.dependOn(&run_exe_tests.step);
 	}
 	module.addImport("main", exe.root_module);
+	exe.step.dependOn(&modFinderStep.step);
 	exe.root_module.addImport(name, module);
 }
 
 fn addModFeatures(b: *std.Build, exe: *std.Build.Step.Compile) !void {
-	exe.step.dependOn(try makeModFeaturesStep(b));
+	const modFinder = b.addExecutable(.{
+		.name = "mod_finder",
+		.root_module = b.createModule(.{
+			.root_source_file = b.path("scripts/mod_finder.zig"),
+			.target = b.graph.host,
+		}),
+	});
+	const modFinderStep = b.addRunArtifact(modFinder);
+	modFinderStep.addDirectoryArg(b.path("mods"));
+	modFinderStep.addDirectoryArg(b.path("mods"));
 
-	try addModFeatureModule(b, exe, "rotations");
-}
-
-pub fn makeModFeaturesStep(b: *std.Build) !*std.Build.Step {
-	var io = std.Io.Threaded.init(b.allocator, .{});
-	defer io.deinit();
-
-	return makeModFeature(io.io(), b, "rotations");
+	try addModFeatureModule(b, modFinderStep, exe, b.path("mods"), "rotations");
 }
 
 fn createLaunchConfig(b: *std.Build) !void {
@@ -235,7 +238,7 @@ pub fn build(b: *std.Build) !void {
 	const options = b.addOptions();
 	const isRelease = b.option(bool, "release", "Removes the -dev flag from the version") orelse false;
 	const sanitizeThread = b.option(bool, "sanitizeThread", "enables the builtin thread sanitizer");
-	const version = b.fmt("0.4.0{s}", .{if (isRelease) "" else "-dev"});
+	const version = b.fmt("0.5.0{s}", .{if (isRelease) "" else "-dev"});
 	if (b.option([]const u8, "version", "used by the CI to check if the git tag and game version match")) |tagVersion| {
 		const tagVersionUpperbound: usize = std.mem.indexOfScalar(u8, tagVersion, '-') orelse tagVersion.len;
 		const versionUpperbound: usize = std.mem.indexOfScalar(u8, version, '-') orelse version.len;
