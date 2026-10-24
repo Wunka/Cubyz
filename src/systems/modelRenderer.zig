@@ -32,6 +32,7 @@ const c = @import("c");
 pub const client = struct { // MARK: client
 	var pipeline: graphics.Pipeline = undefined;
 	pub var nodeBuffer: graphics.LargeBuffer(Mat4f) = undefined;
+	pub var vkNodeBuffer: ?graphics.vulkan.Buffer = undefined;
 
 	var uniforms: struct {
 		modelViewMatrix: c_int,
@@ -40,6 +41,12 @@ pub const client = struct { // MARK: client
 		ambientLight: c_int,
 		nodeBufferOffset: c_int,
 	} = undefined;
+        const Unfiorms = extern struct {
+	modelViewMatrix;
+	vec3 ambientLight;
+	uint light;
+	uint nodeBufferOffset;
+        };
 
 	pub fn init() void {
 		pipeline = graphics.Pipeline.init(
@@ -53,13 +60,24 @@ pub const client = struct { // MARK: client
 				.depthStencilState = .{.depthTest = true},
 				.blendState = .{.attachments = &.{.alphaBlending}, .formats = &.{.world}},
 			},
+
 		);
 
-		nodeBuffer.init(main.globalAllocator, 1 << 20, 15);
+		if (main.settings.launch_config.vulkanTestingMode) {
+			vkNodeBuffer = .init(1 << 20, .{
+				.usage = .{},
+			});
+		} else {
+			nodeBuffer.init(main.globalAllocator, 1 << 20, 15);
+		}
 	}
 	pub fn deinit() void {
 		pipeline.deinit();
-		nodeBuffer.deinit();
+		if (vkNodeBuffer) {
+			vkNodeBuffer.?.deferredDeinit();
+		} else {
+			nodeBuffer.deinit();
+		}
 	}
 	pub fn clear() void {}
 
@@ -139,7 +157,11 @@ pub const client = struct { // MARK: client
 
 				component.matrices[i] = parentMat.mul(node.recalc(entModel.nodePivots[i])).transpose();
 			}
-			main.systems.systems.modelRenderer.client.nodeBuffer.uploadData(component.matrices, &component.bufferAllocation);
+			if (vkNodeBuffer) |_| {
+				vkNodeBuffer.?.uploadData(0, std.mem.sliceAsBytes(component.matrices));
+			} else {
+				main.systems.systems.modelRenderer.client.nodeBuffer.uploadData(component.matrices, &component.bufferAllocation);
+			}
 		}
 
 		pipeline.bind(null);
@@ -147,7 +169,9 @@ pub const client = struct { // MARK: client
 		c.glUniform3fv(uniforms.ambientLight, 1, @ptrCast(&ambientLight));
 		c.glUniform1f(uniforms.contrast, 0.12);
 
-		main.systems.systems.modelRenderer.client.nodeBuffer.beginRender();
+		if (vkNodeBuffer == null) {
+			main.systems.systems.modelRenderer.client.nodeBuffer.beginRender();
+		}
 
 		for (entity.components.@"cubyz:model".client.components.dense.items, entity.components.@"cubyz:model".client.components.denseToSparseIndex.items) |component, id| {
 			if (id == game.player.id) continue; // don't render local player
@@ -183,8 +207,9 @@ pub const client = struct { // MARK: client
 			c.glUniformMatrix4fv(uniforms.modelViewMatrix, 1, c.GL_TRUE, @ptrCast(&modelViewMatrix));
 			c.glDrawElements(c.GL_TRIANGLES, entModel.indexCount, c.GL_UNSIGNED_INT, null);
 		}
-
-		main.systems.systems.modelRenderer.client.nodeBuffer.endRender();
+		if (vkNodeBuffer == null) {
+			main.systems.systems.modelRenderer.client.nodeBuffer.endRender();
+		}
 	}
 };
 // ############################# Server only stuff ################################
