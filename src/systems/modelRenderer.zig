@@ -41,12 +41,12 @@ pub const client = struct { // MARK: client
 		ambientLight: c_int,
 		nodeBufferOffset: c_int,
 	} = undefined;
-        const Unfiorms = extern struct {
-	modelViewMatrix;
-	vec3 ambientLight;
-	uint light;
-	uint nodeBufferOffset;
-        };
+	const Unfiorms = extern struct {
+		modelViewMatrix: [4][4]f32 align(16),
+		ambientLight: [3]f32 align(16),
+		light: c_uint,
+		nodeBufferOffset: c_uint,
+	};
 
 	pub fn init() void {
 		pipeline = graphics.Pipeline.init(
@@ -56,16 +56,18 @@ pub const client = struct { // MARK: client
 			&uniforms,
 			main.entityModel.EntityModel.Vertex,
 			.{
+				.bindings = &.{.sampler(0, .{.fragment = true})},
 				.rasterState = .{},
 				.depthStencilState = .{.depthTest = true},
+				.inputAssemblyState = .{.topology = .triangleList},
 				.blendState = .{.attachments = &.{.alphaBlending}, .formats = &.{.world}},
+				.pushConstantSize = @sizeOf(Unfiorms),
 			},
-
 		);
 
 		if (main.settings.launch_config.vulkanTestingMode) {
 			vkNodeBuffer = .init(1 << 20, .{
-				.usage = .{},
+				.usage = c.VK_IMAGE_USAGE_TRANSFER_DST_BIT | c.VK_IMAGE_USAGE_SAMPLED_BIT | c.VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 			});
 		} else {
 			nodeBuffer.init(main.globalAllocator, 1 << 20, 15);
@@ -73,7 +75,7 @@ pub const client = struct { // MARK: client
 	}
 	pub fn deinit() void {
 		pipeline.deinit();
-		if (vkNodeBuffer) {
+		if (vkNodeBuffer) |_| {
 			vkNodeBuffer.?.deferredDeinit();
 		} else {
 			nodeBuffer.deinit();
@@ -166,8 +168,10 @@ pub const client = struct { // MARK: client
 
 		pipeline.bind(null);
 
-		c.glUniform3fv(uniforms.ambientLight, 1, @ptrCast(&ambientLight));
-		c.glUniform1f(uniforms.contrast, 0.12);
+		if (!settings.launch_config.vulkanTestingMode) {
+			c.glUniform3fv(uniforms.ambientLight, 1, @ptrCast(&ambientLight));
+			c.glUniform1f(uniforms.contrast, 0.12);
+		}
 
 		if (vkNodeBuffer == null) {
 			main.systems.systems.modelRenderer.client.nodeBuffer.beginRender();
@@ -179,10 +183,17 @@ pub const client = struct { // MARK: client
 			const entModel = component.entityModel.get();
 			const ent = main.client.entity_manager.getEntity(id) orelse continue;
 
-			entModel.bind();
-			const entTexture = entModel.defaultTexture;
+			if (settings.launch_config.vulkanTestingMode) {
+				graphics.vulkan.currentFrame.renderCommands.bindPipeline(pipeline, null);
+				graphics.vulkan.currentFrame.renderCommands.bindDescriptors(pipeline, .graphics, &.{
+					.{.image = .{.binding = 0, .image = entModel.defaultTexture.?.vulkanImage.?}},
+				});
+			} else {
+				entModel.bind();
+				const entTexture = entModel.defaultTexture;
 
-			entTexture.?.bindTo(0);
+				entTexture.?.bindTo(0);
+			}
 			const blockPos: vec.Vec3i = @floor(ent.pos);
 			const lightVals: [6]u8 = main.renderer.mesh_storage.getLight(blockPos[0], blockPos[1], blockPos[2]) orelse @splat(0);
 			const light = (@as(u32, lightVals[0] >> 3) << 25 |
@@ -191,9 +202,6 @@ pub const client = struct { // MARK: client
 				@as(u32, lightVals[3] >> 3) << 10 |
 				@as(u32, lightVals[4] >> 3) << 5 |
 				@as(u32, lightVals[5] >> 3) << 0);
-
-			c.glUniform1ui(uniforms.light, @bitCast(@as(u32, light)));
-			c.glUniform1ui(uniforms.nodeBufferOffset, @bitCast(@as(u32, component.bufferAllocation.start)));
 
 			const pos: Vec3d = ent.getRenderPosition() - playerPos;
 			const modelMatrix = (Mat4f.identity()
@@ -204,8 +212,20 @@ pub const client = struct { // MARK: client
 				}))
 				.mul(Mat4f.rotationZ(-ent.rot[2])));
 			const modelViewMatrix = game.camera.viewMatrix.mul(modelMatrix);
-			c.glUniformMatrix4fv(uniforms.modelViewMatrix, 1, c.GL_TRUE, @ptrCast(&modelViewMatrix));
-			c.glDrawElements(c.GL_TRIANGLES, entModel.indexCount, c.GL_UNSIGNED_INT, null);
+			if (settings.launch_config.vulkanTestingMode) {
+				graphics.vulkan.currentFrame.renderCommands.pushConstants(pipeline, &Unfiorms{
+					.light = @bitCast(@as(u32, light)),
+					.nodeBufferOffset = @bitCast(@as(u32, 0)),
+					.modelViewMatrix = modelViewMatrix.toGl(),
+					.ambientLight = ambientLight,
+				});
+				graphics.vulkan.currentFrame.guiCommands.drawIndexed(@intCast(entModel.indexCount), 0);
+			} else {
+				c.glUniform1ui(uniforms.light, @bitCast(@as(u32, light)));
+				c.glUniform1ui(uniforms.nodeBufferOffset, @bitCast(@as(u32, component.bufferAllocation.start)));
+				c.glUniformMatrix4fv(uniforms.modelViewMatrix, 1, c.GL_TRUE, @ptrCast(&modelViewMatrix));
+				c.glDrawElements(c.GL_TRIANGLES, entModel.indexCount, c.GL_UNSIGNED_INT, null);
+			}
 		}
 		if (vkNodeBuffer == null) {
 			main.systems.systems.modelRenderer.client.nodeBuffer.endRender();
