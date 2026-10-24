@@ -41,11 +41,12 @@ pub const client = struct { // MARK: client
 		ambientLight: c_int,
 		nodeBufferOffset: c_int,
 	} = undefined;
-	const Unfiorms = extern struct {
+	const Uniforms = extern struct {
 		modelViewMatrix: [4][4]f32 align(16),
 		ambientLight: [3]f32 align(16),
 		light: c_uint,
 		nodeBufferOffset: c_uint,
+	        contrast: f32,
 	};
 
 	pub fn init() void {
@@ -61,7 +62,7 @@ pub const client = struct { // MARK: client
 				.depthStencilState = .{.depthTest = true},
 				.inputAssemblyState = .{.topology = .triangleList},
 				.blendState = .{.attachments = &.{.alphaBlending}, .formats = &.{.world}},
-				.pushConstantSize = @sizeOf(Unfiorms),
+				.pushConstantSize = @sizeOf(Uniforms),
 			},
 		);
 
@@ -213,11 +214,12 @@ pub const client = struct { // MARK: client
 				.mul(Mat4f.rotationZ(-ent.rot[2])));
 			const modelViewMatrix = game.camera.viewMatrix.mul(modelMatrix);
 			if (settings.launch_config.vulkanTestingMode) {
-				graphics.vulkan.currentFrame.renderCommands.pushConstants(pipeline, &Unfiorms{
+				graphics.vulkan.currentFrame.renderCommands.pushConstants(pipeline, &Uniforms{
 					.light = @bitCast(@as(u32, light)),
 					.nodeBufferOffset = @bitCast(@as(u32, 0)),
 					.modelViewMatrix = modelViewMatrix.toGl(),
 					.ambientLight = ambientLight,
+                                        .contrast = 0.12,
 				});
 				graphics.vulkan.currentFrame.guiCommands.drawIndexed(@intCast(entModel.indexCount), 0);
 			} else {
