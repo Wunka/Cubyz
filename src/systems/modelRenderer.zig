@@ -46,7 +46,7 @@ pub const client = struct { // MARK: client
 		ambientLight: [3]f32 align(16),
 		light: c_uint,
 		nodeBufferOffset: c_uint,
-	        contrast: f32,
+		contrast: f32,
 	};
 
 	pub fn init() void {
@@ -219,9 +219,9 @@ pub const client = struct { // MARK: client
 					.nodeBufferOffset = @bitCast(@as(u32, 0)),
 					.modelViewMatrix = modelViewMatrix.toGl(),
 					.ambientLight = ambientLight,
-                                        .contrast = 0.12,
+					.contrast = 0.12,
 				});
-				graphics.vulkan.currentFrame.guiCommands.drawIndexed(@intCast(entModel.indexCount), 0);
+				graphics.vulkan.currentFrame.renderCommands.drawIndexed(@intCast(entModel.indexCount), 0);
 			} else {
 				c.glUniform1ui(uniforms.light, @bitCast(@as(u32, light)));
 				c.glUniform1ui(uniforms.nodeBufferOffset, @bitCast(@as(u32, component.bufferAllocation.start)));

@@ -17,12 +17,12 @@ layout(push_constant, std430) uniform _ {
 	uint light;
 	uint nodeBufferOffset;
 	float contrast;
-}
+};
 #endif
 
 float lightVariation(vec3 normal) {
-	const vec3 directionalPart = vec3(0, contrast/2, contrast);
-	const float baseLighting = 1 - contrast;
+	vec3 directionalPart = vec3(0, contrast/2, contrast);
+	float baseLighting = 1 - contrast;
 	return baseLighting + dot(normal, directionalPart);
 }
 
