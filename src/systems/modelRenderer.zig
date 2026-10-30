@@ -32,7 +32,7 @@ const c = @import("c");
 pub const client = struct { // MARK: client
 	var pipeline: graphics.Pipeline = undefined;
 	pub var nodeBuffer: graphics.LargeBuffer(Mat4f) = undefined;
-	pub var vkNodeBuffer: ?graphics.vulkan.Buffer = undefined;
+	pub var vkNodeBuffer: ?graphics.vulkan.Buffer = null;
 
 	var uniforms: struct {
 		modelViewMatrix: c_int,
@@ -78,6 +78,7 @@ pub const client = struct { // MARK: client
 		pipeline.deinit();
 		if (vkNodeBuffer) |_| {
 			vkNodeBuffer.?.deferredDeinit();
+			vkNodeBuffer = null;
 		} else {
 			nodeBuffer.deinit();
 		}
@@ -133,8 +134,7 @@ pub const client = struct { // MARK: client
 		}
 	}
 	pub fn render(currentFrame: *graphics.vulkan.Frame, ambientLight: Vec3f, playerPos: Vec3d, deltaTime: f64) void {
-		_ = currentFrame;
-		_ = deltaTime;
+		_ = deltaTime; // autofix
 		main.client.entity_manager.mutex.lock();
 		defer main.client.entity_manager.mutex.unlock();
 
@@ -186,8 +186,8 @@ pub const client = struct { // MARK: client
 			const ent = main.client.entity_manager.getEntity(id) orelse continue;
 
 			if (settings.launch_config.vulkanTestingMode) {
-				graphics.vulkan.currentFrame.renderCommands.bindPipeline(pipeline, null);
-				graphics.vulkan.currentFrame.renderCommands.bindDescriptors(pipeline, .graphics, &.{
+				currentFrame.renderCommands.bindPipeline(currentFrame, pipeline, null);
+				currentFrame.renderCommands.bindDescriptors(pipeline, .graphics, &.{
 					.{.image = .{.binding = 0, .image = entModel.defaultTexture.?.vulkanImage.?}},
 				});
 			} else {
@@ -215,14 +215,14 @@ pub const client = struct { // MARK: client
 				.mul(Mat4f.rotationZ(-ent.rot[2])));
 			const modelViewMatrix = game.camera.viewMatrix.mul(modelMatrix);
 			if (settings.launch_config.vulkanTestingMode) {
-				graphics.vulkan.currentFrame.renderCommands.pushConstants(pipeline, &Uniforms{
+				currentFrame.renderCommands.pushConstants(pipeline, &Uniforms{
 					.light = @bitCast(@as(u32, light)),
 					.nodeBufferOffset = @bitCast(@as(u32, 0)),
 					.modelViewMatrix = modelViewMatrix.toGl(),
 					.ambientLight = ambientLight,
 					.contrast = 0.12,
 				});
-				graphics.vulkan.currentFrame.renderCommands.drawIndexed(@intCast(entModel.indexCount), 0);
+				currentFrame.renderCommands.drawIndexed(@intCast(entModel.indexCount), 0);
 			} else {
 				c.glUniform1ui(uniforms.light, @bitCast(@as(u32, light)));
 				c.glUniform1ui(uniforms.nodeBufferOffset, @bitCast(@as(u32, component.bufferAllocation.start)));
